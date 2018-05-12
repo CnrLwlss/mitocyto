@@ -87,3 +87,17 @@ Once you are happy with the edgemap and calculated contours, press the escape bu
 
 If an edgemap file saved by `mcgui` is already present in the directory (named EDGE.png) then that data will be automatically loaded into the edgemap.  This useful feature allows us a way to save manual work on constructing edgemaps.  We can also copy edgemaps from one directory to another if we need to examine the same contours on adjacent sections, for example.  The image can be resized and rotated in a photo editing program to suit another section, if necessary.
 
+### Keyboard shortcuts
+* 1-0: Select specific image from directory & display filename
+* q-p: Select specific image from directory & display filename
+* a-g: Select specific image from directory & display filename
+* x: Clear edgemap
+* z: Copy image currently displayed to edgemap
+* b: Toggle threshold mode for current image
+* n: Toggle gradient mode for current image
+* z: Display edgemap
+* Left arrow: Display previous image from list of images in directory
+* Right arrow: Display next image from list of images in directory
+* Space bar: Display cell areas estimated from edgemap
+
+
