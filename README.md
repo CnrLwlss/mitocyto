@@ -88,7 +88,7 @@ Using Windows Explorer, navigate to a directory containing images for analysis. 
 <p>
 <figure>
   <img src="/images/EDGE_mitocyto.png" alt="mitocyto edgemap"/>
-  <figcaption>Edge map estimated directtly from a dystrophin channel (dystrophin stains cell membranes)</figcaption>
+  <figcaption>Edge map estimated directly from a dystrophin channel (dystrophin stains cell membranes)</figcaption>
 </figure>
 </p>
 
