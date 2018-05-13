@@ -4,6 +4,7 @@ import os
 import mitocyto as mc
 import cv2
 import numpy as np
+import webbrowser
 
 def clearEdges():
     global arrs,edgeim
@@ -27,6 +28,8 @@ def key(event,keymap):
         clearEdges()
     if k == "c":
         copying = True
+    if k =="h":
+        webbrowser.open("https://github.com/CnrLwlss/mitocyto/blob/master/README.md")
     if k == "b":
         if imtype == "threshold":
             imtype = "raw"
@@ -58,29 +61,45 @@ def key(event,keymap):
         if showcontours:
             arrs[-1] = np.array(edgeim, dtype=np.uint8)
             imnew,contours = mc.makeContours(mc.makepseudo(arrs[-1]),showedges)
-            title = "Contours"
-            #C.delete("dot")
+            #title = "mitocyto Contours"
+            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
+            C.delete("dot")
             root.title(title)
             img = ImageTk.PhotoImage(imnew.resize((wnew,hnew),Image.ANTIALIAS))
             C.itemconfig(C_image, image=img)
             #showcontours = False
         else:
-            title = fnames[current]+" "+keymap[current]
             if imtype == "raw":
                 arrnew = arrs[current]
-                title = "Raw "+title
+                #title = "mitocyto Raw "+title
             if imtype == "threshold":
                 arrnew = mc.getthresh(arrs[current])
-                title = "Threshold "+title  
+                #title = "mitocyto Threshold "+title  
             if imtype == "edgemap":
                 arrnew = mc.edgesFromGrad(arrs[current],block_size=51)
-                title = "Edgemap "+title
+                #title = "mitocyto Edgemap "+title
             if current == -1 or current == len(arrs) - 1:
                 imnew = edgeim
             else:
                 imnew = Image.fromarray(mc.makepseudo(arrnew))
             #if current is not curr0:
             C.delete("dot")
+            if current == len(fnames):
+                fn = "AVERAGE"
+                sc = ""
+            elif current == len(fnames)+1:
+                fn = "EDGE"
+                sc = "z"
+            elif 0 <= current < len(fnames):
+                fn = fnames[current]
+                if 0<= current < len(keymap):
+                    sc = keymap[current]
+                else:
+                    sc = ""
+            else:
+                fn = ""
+                sc = ""
+            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype, fn ,sc)
             root.title(title)
             img = ImageTk.PhotoImage(imnew.resize((wnew,hnew),Image.ANTIALIAS))
             C.itemconfig(C_image, image=img)
@@ -126,7 +145,7 @@ def main(inp=""):
     print("mitocyto "+mc.__version__)
     
     keymap = "1234567890qwertyuiopasdfg"
-    add_edit = "mitoim.png"
+    add_edit = "mitocyto.png"
     folder = "."
     output = "."
 
@@ -167,6 +186,7 @@ def main(inp=""):
     fnames = files + ["Mean","Edges"]
 
     edgemapfile = os.path.join(output,"EDGE_"+add_edit)
+    averagefile = os.path.join(output,"AVE_"+add_edit)
     if os.path.isfile(edgemapfile):
         edgeim = Image.open(edgemapfile)
         arrs[-1] = np.array(edgeim,dtype=np.uint8)
@@ -177,7 +197,9 @@ def main(inp=""):
 
     #Start the GUI
     root = tk.Tk()
-    root.title(fnames[current]+" "+keymap[current])
+    imtype = "raw"
+    title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],keymap[current])
+    root.title(title)
 
     # Prepare to resize images to fit in screen, if necessary
     screen_width = root.winfo_screenwidth()
@@ -209,6 +231,12 @@ def main(inp=""):
     timer = mc.startTimer()
     print("Saving edited cell membrane file... "+str(timer()))
     Image.fromarray(mc.makepseudo(arrs[-1])).save(edgemapfile)
+    print("Saving average of all channels... "+str(timer()))
+    Image.fromarray(mc.makepseudo(arrs[-2])).save(averagefile)
+
+    #for i in range(0, len(arrs)-2):
+    #    Image.fromarray(mc.makepseudo(arrs[i])).save(files[i]+".png")
+    
     print("Getting contours & saving preview... "+str(timer()))
     arr = arrs[-1]
     arrs = None
