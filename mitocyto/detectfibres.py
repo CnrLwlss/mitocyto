@@ -34,7 +34,7 @@ def edgesFromGrad(arr, block_size = 11):
     #edges = np.zeros(grad.shape,dtype=np.uint8)
     #edges[grad>0.05]=255
     locthresh = filters.threshold_local(np.abs(grad), block_size=block_size, offset=0)
-    edgemask = np.abs(grad) > (locthresh+0.01)
+    edgemask = np.abs(grad) > locthresh
     edges = morphology.binary_dilation(morphology.skeletonize(morphology.remove_small_objects(edgemask,200)),selem=morphology.disk(1))
     return(np.array(edges,dtype=np.uint8))
 

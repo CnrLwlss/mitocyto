@@ -273,5 +273,11 @@ def main(inp=""):
         res.write("\n")
     res.close()
 
+def wrapmain(inp=""):
+    try:
+        main(inp="")
+    except:
+        mc.time.sleep(5)
+
 if __name__ == '__main__':
-    main(inp="")
+    wrapmain(inp="")
