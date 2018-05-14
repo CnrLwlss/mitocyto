@@ -28,14 +28,17 @@ def getthresh(arr, block_size=221):
     thresh = 255*(arr > (locthresh))
     return(thresh)
 
-def edgesFromGrad(arr, block_size = 11):
+def edgesFromGrad(arr, block_size = 11, fname = "", delta = 6200):
     gy,gx= np.gradient(arr)
     grad = np.abs(np.hypot(gx,gy))
+    if fname != "":
+        Image.fromarray(np.array(np.round(65535.0*grad/np.max(grad)),dtype=np.uint16)).save(fname)
     #edges = np.zeros(grad.shape,dtype=np.uint8)
-    #edges[grad>0.05]=255
+    #edges[grad>40000]=255
     locthresh = filters.threshold_local(np.abs(grad), block_size=block_size, offset=0)
-    edgemask = np.abs(grad) > locthresh
+    edgemask = np.abs(grad) > locthresh + delta
     edges = morphology.binary_dilation(morphology.skeletonize(morphology.remove_small_objects(edgemask,200)),selem=morphology.disk(1))
+    #edges = edgemask
     return(np.array(edges,dtype=np.uint8))
 
 #https://github.com/ShawnLYU/Quantile_Normalize
