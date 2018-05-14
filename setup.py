@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version='0.0.3'
+version='0.0.4'
 f=open('mitocyto/version.py',"w")
 f.write("__version__='{}'".format(version))
 f.close()
@@ -14,7 +14,7 @@ setup(name='mitocyto',
       ],
       description='Image analysis of cells in serial sections',
       long_description=open('README.txt').read(),
-      entry_points={"console_scripts":["mcgui = scripts.gui:wrapmain",
+      entry_points={"console_scripts":["mcgui = scripts.gui:main",
                                        "mcauto = scripts.other:main"]},
       author='Conor Lawless',
       author_email='cnr.lwlss@gmail.com',
