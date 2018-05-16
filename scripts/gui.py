@@ -176,9 +176,9 @@ def main(inp=""):
         if not isedge[i]:
             bigarr[:,:,ind]=arr
             ind += 1
-    maxarr = np.max(bigarr,2)
+    #maxarr = np.max(bigarr,2)
     meanarr = np.mean(bigarr,2)
-    medianarr = np.median(bigarr,2)
+    #medianarr = np.median(bigarr,2)
     bigarr = None
 
     arrs = arrs + [meanarr,None]
@@ -207,6 +207,8 @@ def main(inp=""):
 
     if w>screen_width:
         scl = float(screen_width)/float(w)
+    else:
+        scl = 1.0
     if scl*h>screen_height:
         scl = float(screen_height)/float(h)
 
@@ -255,8 +257,10 @@ def main(inp=""):
     print("Opening channel images... "+str(timer()))
     fnames = fnames[0:-2]
     froots = [fname.strip(".ome.tiff") for fname in fnames]
-    images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
-    arrays = {froot:np.array(images[froot],dtype=np.int) for froot in froots}
+    #images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
+    arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
+    #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
+    #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
     #psims = {froot:mc.arrtorgb(arrays[froot]) for froot in froots}
 
     print("Average values for each contour mask in each image... "+str(timer()))
