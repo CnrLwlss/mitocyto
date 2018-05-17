@@ -60,12 +60,15 @@ def key(event,keymap):
     if not modifier:
         if showcontours:
             arrs[-1] = np.array(edgeim, dtype=np.uint8)
-            imnew,contours = mc.makeContours(mc.makepseudo(arrs[-1]),showedges)
+            imnew,contours = mc.makeContours(mc.makepseudo(arrs[-1]),showedges = False)
             #title = "mitocyto Contours"
             title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
             C.delete("dot")
             root.title(title)
-            img = ImageTk.PhotoImage(imnew.resize((wnew,hnew),Image.ANTIALIAS))
+            blobs = imnew.resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
+            chann = Image.fromarray(mc.arrtorgb(arrs[current])).resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
+            merg = Image.blend(blobs,chann,alpha=0.8)
+            img = ImageTk.PhotoImage(merg)
             C.itemconfig(C_image, image=img)
             #showcontours = False
         else:
@@ -121,7 +124,7 @@ def paint(event, colour = "white", rad = 2, sclx=1.0, scly=1.0):
         draw.ellipse((int(round(float(x1)/sclx)), int(round(float(y1)/scly)), int(round(float(x2)/sclx)), int(round(float(y2)/scly))), fill = pcolour, outline=pcolour)
 
 def fillcontour(event):
-    global arrs, contours, edgeim, draw
+    global arrs, contours, edgeim, draw, sclx, scly
     point = (int(round(float(event.x)/sclx)), int(round(float(event.y)/scly)))
     clicked = [(i,cnt) for i,cnt in enumerate(contours) if cv2.pointPolygonTest(cnt, point, measureDist = False) >= 0]
     for i,cnt in clicked:
@@ -140,7 +143,7 @@ def checkmod(event, keymap, modkeys = ["Shift_L","Shift_R"], press = True):
         key(event, keymap)
 
 def main(inp=""):
-    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image
+    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly
     #inp="-gixcp"
     print("mitocyto "+mc.__version__)
     

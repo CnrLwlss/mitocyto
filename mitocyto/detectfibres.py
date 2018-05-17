@@ -12,7 +12,7 @@ from skimage import restoration, filters, feature, segmentation, morphology, tra
 # Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": http://landinghub.visualstudio.com/visual-cpp-build-tools
 import pandas as pd
 
-def makeContours(arr,showedges = True):
+def makeContours(arr,showedges = True, thickness = cv2.FILLED):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
     im2,contours,hierarchy = cv2.findContours(arr, 1, 2)
     contours = tidy(contours, alim=(500,9000), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
@@ -20,7 +20,7 @@ def makeContours(arr,showedges = True):
         todraw = arr
     else:
         todraw = np.zeros(arr.shape,dtype=np.uint8)
-    rgb = Image.fromarray(drawcontours(todraw,contours,list(range(1,len(contours)+1))))
+    rgb = Image.fromarray(drawcontours(todraw,contours,list(range(1,len(contours)+1)),thickness=thickness))
     return((rgb,contours))
 
 def getthresh(arr, block_size=221):
@@ -114,17 +114,17 @@ def arrtorgb(arr):
     rgb[:,:,2] = arrp
     return(rgb)
 
-def drawcontours(arr,contours,labels=[]):
+def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED):
     rgb = arrtorgb(arr)
     uselabs = len(labels)==len(contours)
     for i,cnt in enumerate(contours):
         h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
         r,g,b = [int(256*i) for i in colorsys.hls_to_rgb(h,l,s)]
         col = np.random.randint(50,200)
-        cv2.drawContours(rgb,[cnt],-1,(r,g,b),cv2.FILLED)
+        cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
         if uselabs:
             cX,cY = getcentre(cnt)
-            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     return(rgb)
 
 def drawcentres(arr,contours,labels=[],ptrad=3):
@@ -147,7 +147,7 @@ def getcentre(cnt):
 
 def makemask(shape,cnt):
     mask = np.zeros(shape)
-    cv2.drawContours(mask,[cnt],-1,255,cv2.FILLED)
+    cv2.drawContours(mask,[cnt],-1,255,thickness=1)
     #return(mask>0)
     return(np.where(mask == 255))
 
@@ -292,11 +292,11 @@ if __name__ == "__main__":
         perims = [cv2.arcLength(cnt,True) for cnt in contours]
         circs = [circularity(cnt) for cnt in contours]
     
-        rgb = drawcontours(arr,contours,list(range(1,len(contours)+1)))
+        rgb = drawcontours(arr,contours,list(range(1,len(contours)+1)),thickness=1)
         savearr(rgb,os.path.join(output,"Contours.png"))
         #Image.fromarray(rgb).show()
 
-        rgb = drawcontours(ithresh,contours,list(range(1,len(contours)+1)))
+        rgb = drawcontours(ithresh,contours,list(range(1,len(contours)+1)),thickness=1)
         savearr(rgb,os.path.join(output,"Contours_Thresh.png"))
         #Image.fromarray(rgb).show()
     
