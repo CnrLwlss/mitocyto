@@ -1,24 +1,25 @@
 from setuptools import setup, find_packages
 import os
 
-version='0.0.5'
+version='0.0.6'
 f=open('mitocyto/version.py',"w")
 f.write("__version__='{}'".format(version))
 f.close()
 
 setup(name='mitocyto',
       version=version,
-      packages=['mitocyto','scripts'],
+      packages=['mitocyto','mitocyto_scripts'],
       install_requires=[
-          'numpy','scipy','pandas','pillow','opencv-python','matplotlib','scikit-image'
+          'psutil','numpy','scipy','pandas','pillow','opencv-python','matplotlib','scikit-image'
       ],
       description='Image analysis of cells in serial sections',
       long_description=open('README.txt').read(),
-      entry_points={"console_scripts":["mcgui = scripts.gui:main",
-                                       "mcauto = scripts.auto:main",
-                                       "mcmerge = scrips.getResults:main",
-                                       "mctag = scripts.tagFiles:main(True)",
-                                       "mctag = scripts.tagFiles:main(False)"]},
+      entry_points={"console_scripts":["mcgui = mitocyto_scripts.gui:main",
+                                       "mcauto = mitocyto_scripts.auto:main",
+                                       "mcmerge = mitocyto_scripts.getResults:main",
+                                       "mcaddtags = mitocyto_scripts.tagFiles:addtags",
+                                       "mcremovetags = mitocyto_scripts.tagFiles:removetags",
+                                       "mcall = mitocyto_scripts.mitocytoAllTheThings:main"]},
       author='Conor Lawless',
       author_email='cnr.lwlss@gmail.com',
       url='http://cnr.lwlss.net',
