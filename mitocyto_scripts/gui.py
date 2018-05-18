@@ -114,7 +114,7 @@ def key(event,keymap):
         draw = ImageDraw.Draw(edgeim)
 
 def paint(event, colour = "white", rad = 2, sclx=1.0, scly=1.0):
-    global draw, edgeim
+    global arrs, draw, edgeim
     if not modifier:
         x1, y1 = ( event.x - rad ), ( event.y - rad )
         x2, y2 = ( event.x + rad ), ( event.y + rad )
@@ -232,6 +232,7 @@ def main(inp=""):
     C.pack()
 
     root.mainloop()
+    arrs[-1] = np.array(edgeim,dtype=np.uint8)
 
     timer = mc.startTimer()
     print("Saving edited cell membrane file... "+str(timer()))
