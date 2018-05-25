@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version='0.0.7'
+version='0.0.9'
 f=open('mitocyto/version.py',"w")
 f.write("__version__='{}'".format(version))
 f.close()

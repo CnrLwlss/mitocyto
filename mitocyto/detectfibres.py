@@ -14,8 +14,10 @@ import pandas as pd
 
 def makeContours(arr,showedges = True, thickness = cv2.FILLED):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
-    im2,contours,hierarchy = cv2.findContours(arr, 1, 2)
-    contours = tidy(contours, alim=(500,9000), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
+    im2,contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
+    # Ensure only looking at holes inside contours...
+    contours = [c for i,c in enumerate(contours) if hierarchy[0][i][3] != -1 ]
+    contours = tidy(contours, alim=(500,12000), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
     if showedges:
         todraw = arr
     else:

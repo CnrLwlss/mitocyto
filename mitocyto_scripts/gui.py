@@ -269,6 +269,7 @@ def main(inp=""):
 
     print("Average values for each contour mask in each image... "+str(timer()))
     avelogs = {froot:[np.mean(np.log(arrays[froot][msk[0],msk[1]]+1)) for msk in masks] for froot in froots}
+    aves = {froot:[np.mean(arrays[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
     fracpos = {froot:[np.sum(arrays[froot][msk[0],msk[1]]>0)/len(msk[0]) for msk in masks] for froot in froots}
 
     print("Writing output to text file... "+str(timer()))
