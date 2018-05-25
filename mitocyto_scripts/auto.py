@@ -106,7 +106,8 @@ def main(inp=""):
 
     for j,froot in enumerate(froots):
         print("Writing "+froot+" results to file... "+str(timer()))
-        res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.abspath(folder).split("\\")[-1],os.path.abspath(os.path.join(folder,fnames[j]))]) for i,ml in enumerate(avelogs[froot])]))
+        #res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.abspath(folder).split("\\")[-1],os.path.abspath(os.path.join(folder,fnames[j]))]) for i,ml in enumerate(avelogs[froot])]))
+        res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(aves[froot])]))
         res.write("\n")
     res.close()
 
