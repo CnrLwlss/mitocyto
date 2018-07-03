@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version='0.0.10'
+version='0.0.12'
 f=open('mitocyto/version.py',"w")
 f.write("__version__='{}'".format(version))
 f.close()
@@ -9,6 +9,7 @@ f.close()
 setup(name='mitocyto',
       version=version,
       packages=['mitocyto','mitocyto_scripts'],
+      python_requires='>3.5.0',
       install_requires=[
           'psutil','numpy','scipy','pandas','pillow','opencv-python','matplotlib','scikit-image'
       ],

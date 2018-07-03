@@ -17,7 +17,7 @@ def makeContours(arr,showedges = True, thickness = cv2.FILLED):
     im2,contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
     # Ensure only looking at holes inside contours...
     contours = [c for i,c in enumerate(contours) if hierarchy[0][i][3] != -1 ]
-    contours = tidy(contours, alim=(500,12000), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
+    contours = tidy(contours, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
     if showedges:
         todraw = arr
     else:
@@ -121,11 +121,11 @@ def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED):
     uselabs = len(labels)==len(contours)
     for i,cnt in enumerate(contours):
         h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
-        r,g,b = [int(256*i) for i in colorsys.hls_to_rgb(h,l,s)]
+        r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
         col = np.random.randint(50,200)
         cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
         if uselabs:
-            cX,cY = getcentre(cnt)
+            cX,cY = [int(round(x)) for x in getcentre(cnt)]
             cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     return(rgb)
 

@@ -1,5 +1,4 @@
-import tkinter as tk
-from PIL import ImageTk, Image, ImageDraw
+from PIL import Image, ImageDraw
 import os
 import mitocyto as mc
 import cv2
@@ -91,8 +90,6 @@ def main(inp=""):
     froots = [fname.strip(".ome.tiff") for fname in fnames]
     #images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
     arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
-    #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
-    #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
     #psims = {froot:mc.arrtorgb(arrays[froot]) for froot in froots}
 
     print("Average values for each contour mask in each image... "+str(timer()))
@@ -108,6 +105,12 @@ def main(inp=""):
         print("Writing "+froot+" results to file... "+str(timer()))
         #res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.abspath(folder).split("\\")[-1],os.path.abspath(os.path.join(folder,fnames[j]))]) for i,ml in enumerate(avelogs[froot])]))
         res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(aves[froot])]))
+        res.write("\n")
+        res.writelines("\n".join([",".join([str(ml),str(i+1),"LOG_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(avelogs[froot])]))
+        res.write("\n")
+    for channel,vals in zip(["Area","AspectRatio","Perimeter","Circularity"],[areas,aspects,perims,circs]):
+        print("Writing "+channel+" results to file... "+str(timer()))
+        res.writelines("\n".join([",".join([str(ml),str(i+1),channel,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(vals)]))
         res.write("\n")
     res.close()
 
