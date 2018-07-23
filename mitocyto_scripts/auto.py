@@ -93,8 +93,9 @@ def main(inp=""):
     #psims = {froot:mc.arrtorgb(arrays[froot]) for froot in froots}
 
     print("Average values for each contour mask in each image... "+str(timer()))
-    avelogs = {froot:[np.mean(np.log(arrays[froot][msk[0],msk[1]]+1)) for msk in masks] for froot in froots}
+    avelogs = {froot:[np.exp(np.mean(np.log(arrays[froot][msk[0],msk[1]]+1))) for msk in masks] for froot in froots}
     aves = {froot:[np.mean(arrays[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
+    meds = {froot:[np.median(arrays[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
     fracpos = {froot:[np.sum(arrays[froot][msk[0],msk[1]]>0)/len(msk[0]) for msk in masks] for froot in froots}
 
     print("Writing output to text file... "+str(timer()))
@@ -107,6 +108,8 @@ def main(inp=""):
         res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(aves[froot])]))
         res.write("\n")
         res.writelines("\n".join([",".join([str(ml),str(i+1),"LOG_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(avelogs[froot])]))
+        res.write("\n")
+        res.writelines("\n".join([",".join([str(ml),str(i+1),"MED_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(meds[froot])]))
         res.write("\n")
     for channel,vals in zip(["Area","AspectRatio","Perimeter","Circularity"],[areas,aspects,perims,circs]):
         print("Writing "+channel+" results to file... "+str(timer()))
