@@ -69,22 +69,25 @@ def MouseWheelHandler(event):
 def cropim(event, dcrop = 50):
     global edges, microscreen, micro, C, ws, hs, edgex, edgey, microimg, edgeimg, newscl
     print("Cropping, please wait...")
-    microscreen = micro.crop([(edgex - dcrop)/newscl, (edgey - dcrop)/newscl,(edgex+edges.size[0]+dcrop)/newscl,(edgey+edges.size[1]+dcrop)/newscl])
-    edgex, edgey = dcrop, dcrop
+    we, he = edges.size
+    unscale = float(micro.size[0])/float(microscreen.size[0])
+    microscreen = micro.crop([(edgex - dcrop)*unscale, (edgey - dcrop)*unscale,(edgex+we+dcrop)*unscale,(edgey+he+dcrop)*unscale])
+#    edgex, edgey = dcrop, dcrop
 
-    wi,hi = [d+2*dcrop for d in edges.size]
+    wi, hi = microscreen.size
 
     if (float(wi)/float(hi)) > (float(ws)/float(hs)):
-        scl2 = float(ws)/float(wi)
+        newscl = float(ws)/float(wi)
     else:
-        scl2 = float(hs)/float(hi)
+        newscl = float(hs)/float(hi)
 
-    newscl = newscl * scl2
-    wnew,hnew = int(round(scl2*wi)), int(round(scl2*hi))
-    sclx,scly = float(wnew)/float(wi), float(hnew)/float(hi)
+    #newscl = newscl * scl2
+    wnew,hnew = int(round(newscl*wi)), int(round(newscl*hi))
 
     microscreen = microscreen.resize((wnew,hnew),Image.ANTIALIAS)
-    edges0 = edges.resize([int(round(x*scl)) for x,scl in zip(edges.size,[scl2,scl2])],Image.ANTIALIAS)
+    #edges0 = edge_orig.resize([int(round(newscl*wi - 2.0*newscl*dcrop/unscale)), int(round(newscl*hi- 2.0*newscl*dcrop/unscale))],Image.ANTIALIAS)
+    dnew = float(dcrop)*hnew/(he + 2*dcrop)
+    edges0 = edge_orig.resize([int(round(newscl*wi - 2.0*dnew)), int(round(newscl*hi- 2.0*dnew))], Image.ANTIALIAS)
     edges = edges0.copy()
 
     microimg = ImageTk.PhotoImage(microscreen)
@@ -94,7 +97,7 @@ def cropim(event, dcrop = 50):
     C.delete(C.C_edge)
 
     C.C_micro = C.create_image(0, 0, image = microimg, anchor = 'nw')
-    C.C_edge = C.create_image(edgex, edgey, image = edgeimg, anchor = 'nw')
+    C.C_edge = C.create_image(int(round(dnew)), int(round(dnew)), image = edgeimg, anchor = 'nw')
 
     C.pack(fill="both", expand=True)
 
@@ -103,8 +106,9 @@ edge_orig = RBGAImage("H:\\charlotte W cytof\\patient\\m0164\\EDGE_mitocyto.png"
 micro = RBGAImage("E:\\IONRDW\\IF\\comb1\\M0164-12 OXPHOS-Image Export-02\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif")
 
 print("Converting black in edge image to transparent...")
+whitealpha = 0.5
 edgearr = np.array(edge_orig)
-edgearr[...,3] = edgearr[...,2]
+edgearr[...,3] = np.array(np.round(edgearr[...,2] * whitealpha),dtype=np.uint8)
 edge_orig  = Image.fromarray(edgearr)
 
 print("Starting the GUI...")
