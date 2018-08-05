@@ -40,22 +40,22 @@ def draw(back,fore,r = 2):
 # Linux: Binding to <Button-4> and <Button-5> is being used
 
 def MouseWheelHandler(event):
-    global count, edges, edgescl
-
+    global edges, edgescl, C
     def delta(event):
         if event.num == 5 or event.delta < 0:
             return -1 
         return 1
     
     if(delta(event))>0:
-        edgescl = edgescl * 1.005
-        count+=1
+        edgerat = 1.005
+        edgescl = edgescl * edgerat
     else:
-        edgescl = edgescl * 0.995
-        count-=1
-    print("New scaling factor: "+ str(scl0 * edgescl))
+        edgerat = 0.995
+        edgescl = edgescl * edgerat
+    print("New scaling factor: "+ str(scl / edgescl))
     print("Scaling, please wait...")
-    edges = edges0.resize([int(round(x*scl)) for x,scl in zip(edges0.size,[edgescl,edgescl])])
+    #edges = edges0.resize([int(round(x*scl)) for x,scl in zip(edges0.size,[edgerat,edgerat])])
+    edges = edge_orig.resize([int(round(x*s)) for x,s in zip(edge_orig.size,[edgescl,edgescl])],Image.ANTIALIAS)
     ew0,eh0 = edges0.size
     ew,eh = edges.size
     ex,ey = C.coords(C.C_edge)[:]
@@ -63,31 +63,35 @@ def MouseWheelHandler(event):
     C.delete(C.C_edge)
     C.C_edge = C.create_image(int(ex), int(ey), image = C.edgeim)
     
-    C.scale(C.C_edge, lastx, lasty, edgescl, edgescl)
+    #C.scale(C.C_edge, lastx, lasty, edgescl, edgescl)
     C.pack(fill="both", expand=True)
 
 def cropim(event, dcrop = 50):
-    global edges, microscreen, micro, C, ws, hs, edgex, edgey, microimg, edgeimg, newscl
+    global edges, microscreen, micro, C, ws, hs, edgex, edgey, microimg, edgeimg, edgescl, scl, wi, hi, x0, y0
     print("Cropping, please wait...")
     we, he = edges.size
     unscale = float(micro.size[0])/float(microscreen.size[0])
-    microscreen = micro.crop([(edgex - dcrop)*unscale, (edgey - dcrop)*unscale,(edgex+we+dcrop)*unscale,(edgey+he+dcrop)*unscale])
+    print("unscale: ",unscale)
+    x0, y0 = (edgex - dcrop)*unscale, (edgey - dcrop)*unscale
+    microscreen = micro.crop([x0, y0, (edgex+we+dcrop)*unscale,(edgey+he+dcrop)*unscale])
 #    edgex, edgey = dcrop, dcrop
 
     wi, hi = microscreen.size
 
     if (float(wi)/float(hi)) > (float(ws)/float(hs)):
-        newscl = float(ws)/float(wi)
+        scl = float(ws)/float(wi)
     else:
-        newscl = float(hs)/float(hi)
-
-    #newscl = newscl * scl2
-    wnew,hnew = int(round(newscl*wi)), int(round(newscl*hi))
+        scl = float(hs)/float(hi)
+    print("scl: ",scl)
+    wnew,hnew = int(round(scl*wi)), int(round(scl*hi))
 
     microscreen = microscreen.resize((wnew,hnew),Image.ANTIALIAS)
-    #edges0 = edge_orig.resize([int(round(newscl*wi - 2.0*newscl*dcrop/unscale)), int(round(newscl*hi- 2.0*newscl*dcrop/unscale))],Image.ANTIALIAS)
-    dnew = float(dcrop)*hnew/(he + 2*dcrop)
-    edges0 = edge_orig.resize([int(round(newscl*wi - 2.0*dnew)), int(round(newscl*hi- 2.0*dnew))], Image.ANTIALIAS)
+    dnew = float(dcrop)*hnew/(he + 2.0*dcrop)
+    #edgescl = (scl*hi - 2.0*dnew)/he
+    edgescl = (dnew/dcrop)*(he/edge_orig.size[1])
+    print("edgescl: ",edgescl)
+    #edges0 = edge_orig.resize([int(round(scl*wi - 2.0*dnew)), int(round(scl*hi- 2.0*dnew))], Image.ANTIALIAS)
+    edges0 = edge_orig.resize([int(round(x*s)) for x, s in zip(edge_orig.size,[edgescl,edgescl])],Image.ANTIALIAS)
     edges = edges0.copy()
 
     microimg = ImageTk.PhotoImage(microscreen)
@@ -101,9 +105,15 @@ def cropim(event, dcrop = 50):
 
     C.pack(fill="both", expand=True)
 
+def finished(event):
+    root.destroy()
+    root.quit()
+
 print("Opening images...")
-edge_orig = RBGAImage("H:\\charlotte W cytof\\patient\\m0164\\EDGE_mitocyto.png")
-micro = RBGAImage("E:\\IONRDW\\IF\\comb1\\M0164-12 OXPHOS-Image Export-02\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif")
+edgepath = "H:\\charlotte W cytof\\patient\\m0164\\EDGE_mitocyto.png"
+micropath = "E:\\IONRDW\\IF\\comb1\\M0164-12 OXPHOS-Image Export-02\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif"
+edge_orig = Image.open(edgepath).convert("RGBA")
+micro = Image.open(micropath)
 
 print("Converting black in edge image to transparent...")
 whitealpha = 0.5
@@ -133,18 +143,20 @@ sclx,scly = float(wnew)/float(wi), float(hnew)/float(hi)
 
 edgex, edgey = 0, 0
 lastx, lasty = 0, 0
-scl0 = 3.13
-edgescl = 1.0
-newscl = scl0 * scl * edgescl
+scl0 = 3.1273
+edgescl = scl0 * scl
 count = 0
 background = []
 foreground = []
-
+x0, y0 = 0, 0
 print("Resizing images to fit screen...")
 microscreen = micro.resize((wnew,hnew),Image.ANTIALIAS)
-edges0 = edge_orig.resize([int(round(x*scl)) for x,scl in zip(edge_orig.size,[newscl,newscl])],Image.ANTIALIAS)
+edges0 = edge_orig.resize([int(round(x*s)) for x,s in zip(edge_orig.size,[edgescl,edgescl])],Image.ANTIALIAS)
 edges = edges0.copy()
 #microscreen.paste(edges,(0,0),edges)
+
+print("scl: ",scl)
+print("edgescl: ",edgescl)
 
 microimg = ImageTk.PhotoImage(microscreen)
 edgeimg = ImageTk.PhotoImage(edges)
@@ -164,6 +176,17 @@ C.bind('<Button-1>', set_root)
 C.bind('<Button-3>', annotate)
 C.bind('<B1-Motion>', next_image)
 C.bind('c', cropim)
+C.bind('<Escape>', finished)
+
 C.focus_set() # Give canvas a keyboard focus!!
 
 root.mainloop()
+
+if len(background)>0:
+    microresult = micro.crop([x0, y0, x0 + wi, y0 + hi])
+    microresult.save("Micro.png")
+    edgeresult = Image.open(edgepath).resize([int(round(m*edgescl/scl)) for m in edge_orig.size],Image.ANTIALIAS)
+    edgeresult.save("Edge.png")
+    background = [[int(round(x/scl)),int(round(y/scl))] for x,y in background]
+    
+    
