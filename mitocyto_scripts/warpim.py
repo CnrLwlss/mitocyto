@@ -112,7 +112,9 @@ def finished(event):
 
 print("Opening images...")
 edgepath = "H:\\charlotte W cytof\\patient\\m0164\\EDGE_mitocyto.png"
-micropath = "E:\\IONRDW\\IF\\comb1\\M0164-12 OXPHOS-Image Export-02\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif"
+#micropath = "E:\\IONRDW\\IF\\comb1\\M0164-12 OXPHOS-Image Export-02\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif"
+micropath = "H:\\M0164-12 OXPHOS-Image Export-02_c1+2+3+4.tif"
+
 edge_orig = Image.open(edgepath).convert("RGBA")
 micro = Image.open(micropath)
 
