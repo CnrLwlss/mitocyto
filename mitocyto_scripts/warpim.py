@@ -1,6 +1,7 @@
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 Image.MAX_IMAGE_PIXELS = None
 import numpy as np
+import cv2
 
 import tkinter as tk
 
@@ -183,10 +184,26 @@ C.focus_set() # Give canvas a keyboard focus!!
 root.mainloop()
 
 if len(background)>0:
+    prad = 10
     microresult = micro.crop([x0, y0, x0 + wi, y0 + hi])
-    microresult.save("Micro.png")
-    edgeresult = Image.open(edgepath).resize([int(round(m*edgescl/scl)) for m in edge_orig.size],Image.ANTIALIAS)
+    edgeim = Image.open(edgepath).resize([int(round(m*edgescl/scl)) for m in edge_orig.size],Image.ANTIALIAS)
+    edgeresult = Image.new(edgeim.mode,microresult.size)
+    ox, oy = [int(round((m-e)/2.0)) for m,e in zip(microresult.size,edgeim.size)]
+    bground = [[int(round(x/scl)),int(round(y/scl))] for x,y in background]
+    fground = [[int(round(ox + x/scl)),int(round(oy + y/scl))] for x,y in foreground]
+    edgeresult.paste(edgeim,[ox,oy])
+    
+    draw = ImageDraw.Draw(microresult)
+    pts = [draw.ellipse([(x-prad,y-prad),(x+prad,y+prad)],fill="white") for x,y in bground]
+    microresult.save("Micro.jpg")
+    draw = ImageDraw.Draw(edgeresult)
+    pts = [draw.ellipse([(x-prad,y-prad),(x+prad,y+prad)],fill="white") for x,y in fground]
     edgeresult.save("Edge.png")
-    background = [[int(round(x/scl)),int(round(y/scl))] for x,y in background]
+    edgearr = np.array(edgeresult,dtype=np.uint8)
+    bmap = np.array(bground,dtype=np.uint8)
+    fmap = np.array(fground,dtype=np.uint8)
+    #warpedge = cv2.remap(np.array(edgeresult,dtype=np.uint8),fmap,bmap,interpolation=cv2.INTER_LANCZOS4)
+    
+
     
     
