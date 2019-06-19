@@ -65,7 +65,12 @@ def key(event,keymap):
     if not modifier:
         if showcontours:
             arrs[-1] = np.array(edgeim, dtype=np.uint8)
-            imnew,contours = mc.makeContours(mc.makepseudo(arrs[-1]),showedges = False)
+            pim = mc.makepseudo(arrs[-1])
+            arrsm = cv2.bilateralFilter(arrs[-1],6,7,7)
+            parr = mc.makepseudo(arrsm)
+            bright = Image.fromarray(parr)
+            thresh = cv2.adaptiveThreshold(parr,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,251,0)
+            imnew,contours = mc.makeContours(thresh,showedges = False)
             #title = "mitocyto Contours"
             title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
             C.delete("dot")
@@ -151,6 +156,7 @@ def main(inp=""):
     global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly
     #inp="-gixcp"
     print("mitocyto "+mc.__version__)
+    print("opencv "+cv2.__version__)
     
     keymap = "1234567890qwertyuiopasdfg"
     add_edit = "mitocyto.png"

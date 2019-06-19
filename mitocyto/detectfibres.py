@@ -12,12 +12,15 @@ from skimage import restoration, filters, feature, segmentation, morphology, tra
 # Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": http://landinghub.visualstudio.com/visual-cpp-build-tools
 import pandas as pd
 
-def makeContours(arr,showedges = True, thickness = cv2.FILLED):
+def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0)):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
-    im2,contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
+    if int(cv2.__version__.split(".")[0])>=3:
+      contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
+    else:
+      im2,contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
     # Ensure only looking at holes inside contours...
     contours = [c for i,c in enumerate(contours) if hierarchy[0][i][3] != -1 ]
-    contours = tidy(contours, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0))
+    contours = tidy(contours,alim,arlim,clim,cvxlim)
     if showedges:
         todraw = arr
     else:
@@ -184,13 +187,27 @@ def getaspect(cnt):
 def circularity(cnt):
     return(4*np.pi*cv2.contourArea(cnt)/(cv2.arcLength(cnt,True)**2))
 
-def tidy(contours, alim = (0,999999), arlim=(0,9999999), clim=(0,9999999), cvxlim=(0.0,1.0)):
-    cnew = [cnt for cnt in contours if
-            (alim[0] < cv2.contourArea(cnt) < alim[1]) and
-            (arlim[0] < getaspect(cnt) < arlim[1]) and
-            (clim[0] < circularity(cnt) < clim[1]) and
-            (cvxlim[0] < cv2.contourArea(cnt)/cv2.contourArea(cv2.convexHull(cnt)) < cvxlim[1])
-            ]
+def tidy(contours, alim = (0,999999), arlim=(0,9999999), clim=(0,9999999), cvxlim=(0.0,1.0),tiny=75):
+    # Just get rid of tiny contours first
+    contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min(tiny,alim[0])]
+    
+    N = len(contours)
+    low_area = [cv2.contourArea(cnt) <= alim[0] for cnt in contours]
+    high_area = [cv2.contourArea(cnt) >= alim[1] for cnt in contours]
+    low_aspect = [getaspect(cnt) <= arlim[0] for cnt in contours]
+    high_aspect = [getaspect(cnt) >= arlim[1] for cnt in contours]
+    low_circ = [circularity(cnt) <= clim[0] for cnt in contours]
+    high_circ = [circularity(cnt) >= clim[1] for cnt in contours]
+    low_cvx = [cv2.contourArea(cnt)/cv2.contourArea(cv2.convexHull(cnt)) <= cvxlim[0] for cnt in contours]
+    high_cvx = [cv2.contourArea(cnt)/cv2.contourArea(cv2.convexHull(cnt)) >= cvxlim[1] for cnt in contours]
+    
+    print("{} initial contours greater than 75 pixels".format(N))
+    print("{} ({:03.2f}%) area too low, {} ({:03.2f}%) area too high".format(sum(low_area), 100*sum(low_area)/N, sum(high_area), 100*sum(high_area)/N))
+    print("{} ({:03.2f}%) aspect ratio too low, {} ({:03.2f}%) aspect ratio too high".format(sum(low_aspect), 100*sum(low_aspect)/N, sum(high_aspect),  100*sum(high_aspect)/N ))
+    print("{} ({:03.2f}%) circularity too low, {} ({:03.2f}%) circularity too high".format(sum(low_circ), 100*sum(low_circ)/N, sum(high_circ), 100*sum(high_circ)/N))
+    print("{} ({:03.2f}%) convexity too low, {} ({:03.2f}%) convexity too high".format(sum(low_cvx), 100*sum(low_cvx)/N, sum(high_cvx), 100*sum(high_cvx)/N))
+    keep = [sum(x)==0 for x in zip(low_area,high_area,low_aspect,high_aspect,low_circ,high_circ,low_cvx,high_cvx)]
+    cnew = [cnt for cnt,k in zip(contours,keep) if k]
     return(cnew)
 
 def startTimer():
