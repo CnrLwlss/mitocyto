@@ -32,6 +32,13 @@ def getthresh(arr, block_size=221):
     locthresh = filters.threshold_local(arr, block_size=block_size, offset=0)
     thresh = 255*(arr > (locthresh))
     return(thresh)
+	
+def makethresholded(arr):
+    arrsm = cv2.bilateralFilter(arr,6,7,7)
+    parr = makepseudo(arrsm)
+    bright = Image.fromarray(parr)
+    thresh = cv2.adaptiveThreshold(parr,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,251,0)
+    return(thresh)
 
 def edgesFromGrad(arr, block_size = 11, fname = "", delta = 6200):
     gy,gx= np.gradient(arr)

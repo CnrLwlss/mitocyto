@@ -65,11 +65,7 @@ def key(event,keymap):
     if not modifier:
         if showcontours:
             arrs[-1] = np.array(edgeim, dtype=np.uint8)
-            pim = mc.makepseudo(arrs[-1])
-            arrsm = cv2.bilateralFilter(arrs[-1],6,7,7)
-            parr = mc.makepseudo(arrsm)
-            bright = Image.fromarray(parr)
-            thresh = cv2.adaptiveThreshold(parr,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,251,0)
+            thresh = mc.makethresholded(arrs[-1])
             imnew,contours = mc.makeContours(thresh,showedges = False)
             #title = "mitocyto Contours"
             title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
@@ -257,8 +253,8 @@ def main(inp=""):
     print("Getting contours & saving preview... "+str(timer()))
     arr = arrs[-1]
     arrs = None
-
-    rgb,contours = mc.makeContours(mc.makepseudo(arr))
+    thresh = mc.makethresholded(arr)
+    rgb,contours = mc.makeContours(thresh)
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
     print("Building masks from contours... "+str(timer()))
     masks = [mc.makemask(arr.shape,cnt) for cnt in contours]
