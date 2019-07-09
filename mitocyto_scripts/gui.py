@@ -268,6 +268,8 @@ def main():
     aspects = [mc.getaspect(cnt) for cnt in contours]
     perims = [cv2.arcLength(cnt,True) for cnt in contours]
     circs = [mc.circularity(cnt) for cnt in contours]
+    xvals = [c[0] for c in centres]
+    yvals = [c[1] for c in centres]
 
     print("Opening channel images... "+str(timer()))
     fnames = fnames[0:-2]
@@ -296,7 +298,7 @@ def main():
         res.write("\n")
         res.writelines("\n".join([",".join([str(ml),str(i+1),"MED_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(meds[froot])]))
         res.write("\n")
-    for channel,vals in zip(["Area","AspectRatio","Perimeter","Circularity"],[areas,aspects,perims,circs]):
+    for channel,vals in zip(["Area","AspectRatio","Perimeter","Circularity","xCoord","yCoord"],[areas,aspects,perims,circs,xvals,yvals]):
         print("Writing "+channel+" results to file... "+str(timer()))
         res.writelines("\n".join([",".join([str(ml),str(i+1),channel,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(vals)]))
         res.write("\n")
