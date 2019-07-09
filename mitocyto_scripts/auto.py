@@ -4,11 +4,15 @@ import mitocyto as mc
 import cv2
 import numpy as np
 import webbrowser
+import sys
 
-def main(inp=""):
-    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image
-    #inp="-gixcp"
+def main():
+    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image, inp
     print("mitocyto "+mc.__version__)
+    print("opencv "+cv2.__version__)
+    inp = mc.getCommands()
+    print("command executed:")
+    print(" ".join(sys.argv))
     
     keymap = "1234567890qwertyuiopasdfg"
     add_edit = "mitocyto.png"
@@ -74,7 +78,11 @@ def main(inp=""):
     arr = arrs[-1]
     arrs = None
 
-    rgb,contours = mc.makeContours(mc.makepseudo(arr))
+
+    thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
+    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
+    
+    #rgb,contours = mc.makeContours(mc.makepseudo(arr))
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
     print("Building masks from contours... "+str(timer()))
     masks = [mc.makemask(arr.shape,cnt) for cnt in contours]
@@ -117,11 +125,8 @@ def main(inp=""):
         res.write("\n")
     res.close()
 
-def wrapmain(inp=""):
+if __name__ == '__main__':
     try:
-        main(inp="")
+        main()
     except:
         mc.time.sleep(5)
-
-if __name__ == '__main__':
-    wrapmain(inp="")

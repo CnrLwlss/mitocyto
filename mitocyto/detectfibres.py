@@ -11,8 +11,10 @@ import skimage as ski
 from skimage import restoration, filters, feature, segmentation, morphology, transform, draw
 # Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": http://landinghub.visualstudio.com/visual-cpp-build-tools
 import pandas as pd
+import argparse
+import sys
 
-def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0)):
+def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
     if int(cv2.__version__.split(".")[0])>=3:
       contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
@@ -21,11 +23,15 @@ def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500),
     # Ensure only looking at holes inside contours...
     contours = [c for i,c in enumerate(contours) if hierarchy[0][i][3] != -1 ]
     contours = tidy(contours,alim,arlim,clim,cvxlim)
+    if numbercontours:
+        clabs = list(range(1,len(contours)+1))
+    else:
+        clabs = []
     if showedges:
         todraw = arr
     else:
         todraw = np.zeros(arr.shape,dtype=np.uint8)
-    rgb = Image.fromarray(drawcontours(todraw,contours,list(range(1,len(contours)+1)),thickness=thickness))
+    rgb = Image.fromarray(drawcontours(todraw,contours,clabs,thickness=thickness))
     return((rgb,contours))
 
 def getthresh(arr, block_size=221):
@@ -33,11 +39,23 @@ def getthresh(arr, block_size=221):
     thresh = 255*(arr > (locthresh))
     return(thresh)
 	
-def makethresholded(arr):
-    arrsm = cv2.bilateralFilter(arr,6,7,7)
+def makethresholded(arr,writetofile=False,d=6,sigmaColor=7,sigmaSpace=7,blockSize=251,basew = 1920):
+    imarr = Image.fromarray(arr)
+    arrsm = cv2.bilateralFilter(arr,d,sigmaColor,sigmaSpace)
     parr = makepseudo(arrsm)
     bright = Image.fromarray(parr)
-    thresh = cv2.adaptiveThreshold(parr,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,251,0)
+    thresh = cv2.adaptiveThreshold(parr,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,blockSize,0)
+    if writetofile:
+      imarr = Image.fromarray(arr)
+      imthresh = Image.fromarray(thresh)
+      imarr.save("pre_orig.png")
+      bright.save("pre_bright.png")
+      imthresh.save("pre_thresh.png")
+      wfrac = (basew/float(bright.size[0]))
+      hsize = int((float(bright.size[1])*float(wfrac)))
+      imarr2 = imarr.resize((basew,hsize), Image.NEAREST).save("scl_orig.png")
+      bright2 = bright.resize((basew,hsize), Image.NEAREST).save("scl_bright.png")
+      thresh2 = imthresh.resize((basew,hsize), Image.NEAREST).save("scl_thresh.png")
     return(thresh)
 
 def edgesFromGrad(arr, block_size = 11, fname = "", delta = 6200):
@@ -134,9 +152,9 @@ def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED):
         r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
         col = np.random.randint(50,200)
         cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
-        if uselabs:
+        if uselabs and arr.shape[1]>1750:
             cX,cY = [int(round(x)) for x in getcentre(cnt)]
-            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5*arr.shape[1]/2656.0, (255, 255, 255), 2)
     return(rgb)
 
 def drawcentres(arr,contours,labels=[],ptrad=3):
@@ -146,9 +164,9 @@ def drawcentres(arr,contours,labels=[],ptrad=3):
     for i,cnt in enumerate(contours):
         cX,cY = getcentre(cnt)
         cv2.circle(rgb, (cX,cY), ptrad, (255, 0, 0), -1)
-        if uselabs:
-            cv2.putText(rgb, str(i+1), (min(w-10,max(10,cX - 20)), min(h-10,max(10,cY - 10))),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
-            cv2.putText(rgb, str(labels[i]), (cX - 20, cY + 20),cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 2)
+        if uselabs and arr.shape[1]>1750:
+            cv2.putText(rgb, str(i+1), (min(w-10,max(10,cX - 20)), min(h-10,max(10,cY - 10))),cv2.FONT_HERSHEY_SIMPLEX, 0.5*arr.shape[1]/2656.0, (255, 255, 0), 1)
+            cv2.putText(rgb, str(labels[i]), (cX - 20, cY + 20),cv2.FONT_HERSHEY_SIMPLEX, 0.6*arr.shape[1]/2656.0, (255, 0, 255), 2)
     return(rgb)
         
 def getcentre(cnt):
@@ -226,3 +244,19 @@ def startTimer():
         t0[0] = time.time()
         return("%.2f" % delta)
     return(getTime)
+
+def getCommands():
+    parser = argparse.ArgumentParser(description="Image analysis parameters which can be adjusted from defaults to help with tissue-specific segmentation problems")
+    parser.add_argument("--areamin", default=500, help="Minimum area (px) for a valid cell object", type=int)
+    parser.add_argument("--areamax", default=17500, help="Maximum area (px) for a valid cell object", type=int)
+    parser.add_argument("--ratiomin", default=0.0, help="Minimum aspect ratio for a valid cell object", type=float)
+    parser.add_argument("--ratiomax", default=10.0, help="Maximum aspect ratio for a valid cell object", type=float)
+    parser.add_argument("--circmin", default=0.0, help="Minimum circularity for a valid cell object", type=float)
+    parser.add_argument("--circmax", default=100.0, help="Maximum circularity for a valid cell object", type=float)
+    parser.add_argument("--convexmin", default=0.75, help="Minimum convexity for a valid cell object", type=float)
+    parser.add_argument("--convexmax", default=1.0, help="Maximum convexity for a valid cell object", type=float)
+    parser.add_argument("--smoothdiam", default=6, help="Smoothing diameter for opencv bilateral filter (applied before thresholding edges)", type=int)
+    parser.add_argument("--smoothsig", default=7, help="Sigma values for opencv bilateral filter (applied before thresholding edges)", type=int)
+    parser.add_argument("--threshblock", default=251, help="Block size for opencv adaptiveThreshold", type=int)
+    return(parser.parse_args())
+    

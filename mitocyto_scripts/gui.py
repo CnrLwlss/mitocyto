@@ -10,6 +10,7 @@ import mitocyto as mc
 import cv2
 import numpy as np
 import webbrowser
+import sys
 
 def clearEdges():
     global arrs,edgeim
@@ -17,7 +18,8 @@ def clearEdges():
     edgeim = Image.fromarray(arrs[-1])
 
 def key(event,keymap):
-    global img,current,ims, arrs, showedges, showcontours, draw, imtype, edgeim, contours
+    global img,current,ims, arrs, showedges, showcontours, draw, imtype, edgeim, contours, inp
+    
     curr0 = current
     k = event.keysym
     if k not in ["Shift_L","Shift_R"]:
@@ -65,15 +67,15 @@ def key(event,keymap):
     if not modifier:
         if showcontours:
             arrs[-1] = np.array(edgeim, dtype=np.uint8)
-            thresh = mc.makethresholded(arrs[-1])
-            imnew,contours = mc.makeContours(thresh,showedges = False)
+            thresh = mc.makethresholded(arrs[-1],False, d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
+            imnew,contours = mc.makeContours(thresh,showedges = True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=False)
             #title = "mitocyto Contours"
             title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
             C.delete("dot")
             root.title(title)
             blobs = imnew.resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
             chann = Image.fromarray(mc.arrtorgb(arrs[current])).resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
-            merg = Image.blend(blobs,chann,alpha=0.8)
+            merg = Image.blend(blobs,chann,alpha=0.6)
             img = ImageTk.PhotoImage(merg)
             C.itemconfig(C_image, image=img)
             #showcontours = False
@@ -148,17 +150,19 @@ def checkmod(event, keymap, modkeys = ["Shift_L","Shift_R"], press = True):
     elif press:
         key(event, keymap)
 
-def main(inp=""):
-    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly
-    #inp="-gixcp"
+def main():       
+    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly, inp
     print("mitocyto "+mc.__version__)
     print("opencv "+cv2.__version__)
+    inp = mc.getCommands()
+    print("command executed:")
+    print(" ".join(sys.argv))
     
     keymap = "1234567890qwertyuiopasdfg"
     add_edit = "mitocyto.png"
     folder = "."
     output = "."
-
+    
     showedges = False
     showcontours = False
     modifier = False
@@ -230,8 +234,8 @@ def main(inp=""):
     C_image = C.create_image(0,0,image=img,anchor='nw')
 
     C.focus_set()
-    C.bind("<B1-Motion>", lambda event: paint(event, colour = "white", rad = 2*scl, sclx = sclx, scly = scly))
-    C.bind("<B3-Motion>", lambda event: paint(event, colour = "black", rad = 5*scl, sclx = sclx, scly = scly))
+    C.bind("<B1-Motion>", lambda event: paint(event, colour = "white", rad = 1, sclx = sclx, scly = scly))
+    C.bind("<B3-Motion>", lambda event: paint(event, colour = "black", rad = 5, sclx = sclx, scly = scly))
     C.bind("<Shift-Button-1>", lambda event: fillcontour(event))
     C.bind("<KeyPress>", lambda event:  checkmod(event, keymap = keymap, press = True))
     C.bind("<KeyRelease>", lambda event: checkmod(event, keymap = keymap, press = False))
@@ -253,8 +257,8 @@ def main(inp=""):
     print("Getting contours & saving preview... "+str(timer()))
     arr = arrs[-1]
     arrs = None
-    thresh = mc.makethresholded(arr)
-    rgb,contours = mc.makeContours(thresh)
+    thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
+    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
     print("Building masks from contours... "+str(timer()))
     masks = [mc.makemask(arr.shape,cnt) for cnt in contours]
@@ -298,11 +302,8 @@ def main(inp=""):
         res.write("\n")
     res.close()
 
-def wrapmain(inp=""):
+if __name__ == '__main__':
     try:
-        main(inp="")
+        main()
     except:
         mc.time.sleep(5)
-
-if __name__ == '__main__':
-    wrapmain(inp="")
