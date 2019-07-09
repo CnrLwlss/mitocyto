@@ -75,13 +75,14 @@ def main():
     #    Image.fromarray(mc.makepseudo(arrs[i])).save(files[i]+".png")
     
     print("Getting contours & saving preview... "+str(timer()))
+
+    arrs[-1] = np.array(edgeim, dtype=np.uint8)
+    thresh = mc.makethresholded(arrs[-1],False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
+    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
+
     arr = arrs[-1]
     arrs = None
 
-
-    thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
-    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
-    
     #rgb,contours = mc.makeContours(mc.makepseudo(arr))
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
     print("Building masks from contours... "+str(timer()))
