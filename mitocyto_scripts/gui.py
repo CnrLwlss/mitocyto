@@ -9,8 +9,10 @@ import os
 import mitocyto as mc
 import cv2
 import numpy as np
+import pandas as pd
 import webbrowser
 import sys
+import re
 
 def clearEdges():
     global arrs,edgeim
@@ -157,7 +159,8 @@ def main():
     inp = mc.getCommands()
     print("command executed:")
     print(" ".join(sys.argv))
-    
+
+    ftxt = '''20190605_ROI 03_3 excel.txt'''
     keymap = "1234567890qwertyuiopasdfg"
     add_edit = "mitocyto.png"
     folder = "."
@@ -169,35 +172,12 @@ def main():
     imtype = "raw"
 
     allfiles = os.listdir(folder)
-    allfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".tiff",".TIFF",".jpg",".JPG",".jpeg",".JPEG",".png",".PNG"]]
-    files = [f for f in allfiles if add_edit not in f]
-    files.sort()
-
-    edge = "Dystrophin"
-    isedge = [edge.lower() in f.lower() for f in files]
-    edgeind = [i for i, x in enumerate(isedge) if x]
-    if len(edgeind)>0:
-        current = edgeind[0]
+    if(ftxt in allfiles):
+        fnames, current, arrs = mc.makeArrsFromText(ftxt,edge = "Dystrophin", add_edit = "mitocyto.png")
     else:
-        current = 0
+        fnames, current, arrs = mc.makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png")
 
-    arrs = [np.array(Image.open(f)) for f in files]
-    #ims = [Image.fromarray(mc.makepseudo(arr)) for arr in arrs]
-    #ims = [Image.fromarray(mc.makepseudo(np.array(Image.open(f)))) for f in files]
-    bigarr = np.zeros(arrs[0].shape+(sum([not i for i in isedge]),),dtype=np.uint8)
-    ind = 0
-    for i,arr in enumerate(arrs):
-        if not isedge[i]:
-            bigarr[:,:,ind]=arr
-            ind += 1
-    #maxarr = np.max(bigarr,2)
-    meanarr = np.mean(bigarr,2)
-    #medianarr = np.median(bigarr,2)
-    bigarr = None
-
-    arrs = arrs + [meanarr,None]
     clearEdges()
-    fnames = files + ["Mean","Edges"]
 
     edgemapfile = os.path.join(output,"EDGE_"+add_edit)
     averagefile = os.path.join(output,"AVE_"+add_edit)
@@ -212,6 +192,8 @@ def main():
     #Start the GUI
     root = tk.Tk()
     imtype = "raw"
+    print(len(fnames))
+    print(fnames[0:10])
     title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],keymap[current])
     root.title(title)
 

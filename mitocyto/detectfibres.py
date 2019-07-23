@@ -11,8 +11,68 @@ import skimage as ski
 from skimage import restoration, filters, feature, segmentation, morphology, transform, draw
 # Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": http://landinghub.visualstudio.com/visual-cpp-build-tools
 import pandas as pd
+import numpy as np
 import argparse
 import sys
+import re
+
+def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png"):
+    allfiles = os.listdir(folder)
+    allfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".tiff",".TIFF",".jpg",".JPG",".jpeg",".JPEG",".png",".PNG"]]
+    files = [f for f in allfiles if add_edit not in f]
+    files.sort()
+
+    isedge = [edge.lower() in f.lower() for f in files]
+    edgeind = [i for i, x in enumerate(isedge) if x]
+    if len(edgeind)>0:
+        current = edgeind[0]
+    else:
+        current = 0
+    arrs = [np.array(Image.open(f)) for f in files]
+    bigarr = np.zeros(arrs[0].shape+(sum([not i for i in isedge]),),dtype=np.uint8)
+    ind = 0
+    for i,arr in enumerate(arrs):
+        if not isedge[i]:
+            bigarr[:,:,ind]=arr
+            ind += 1
+    meanarr = np.mean(bigarr,2)
+    bigarr = None
+    arrs = arrs + [meanarr,None]
+    fnames = files + ["Mean","Edges"]
+    return((fnames,current, arrs))
+
+def makeArrsFromText(fname,edge = "Dystrophin", add_edit = "mitocyto.png",pseudoimages=True):
+    dat = pd.read_csv(fname,sep="\t")
+    w,h = max(dat.X)+1, max(dat.Y)+1
+    chans = list(dat.columns[6:])
+    chans1 = [ch.split("(")[0] for ch in chans]
+    chans2 = [re.split("\(|\)",ch)[1] for ch in chans]
+    nchan = len(chans)
+
+    isedge = [edge.lower() in f.lower() for f in chans1]
+    edgeind = [i for i, x in enumerate(isedge) if x]
+    if len(edgeind)>0:
+        current = edgeind[0]
+    else:
+        current = 0
+    current = 0
+
+    bigarr = np.zeros([h,w,nchan],dtype=np.float32)
+    for i,ch in enumerate(chans):
+        bigarr[:,:,i] = np.mean(dat[ch])
+        bigarr[dat.Y,dat.X,i]=dat[ch]
+
+    meanarr = np.mean(bigarr,2)
+
+    arrs = [bigarr[:,:,i] for i,ch in enumerate(chans)]
+    arrs = arrs + [meanarr,None]
+    chans1 = chans1 + ["Mean.jpg","Edges.jpg"]
+    fnames = [ch+".jpg" for ch in chans1]
+    if pseudoimages:
+        for i,arr in enumerate(arrs):
+            im = Image.fromarray(np.array(np.round(arr),np.uint8))
+            im.save(fnames[i])
+    return((fnames,current,arrs))
 
 def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
@@ -40,6 +100,7 @@ def getthresh(arr, block_size=221):
     return(thresh)
 	
 def makethresholded(arr,writetofile=False,d=6,sigmaColor=7,sigmaSpace=7,blockSize=251,basew = 1920):
+    arr = np.array(arr,dtype=np.uint8)
     imarr = Image.fromarray(arr)
     arrsm = cv2.bilateralFilter(arr,d,sigmaColor,sigmaSpace)
     parr = makepseudo(arrsm)
@@ -216,7 +277,7 @@ def tidy(contours, alim = (0,999999), arlim=(0,9999999), clim=(0,9999999), cvxli
     # Just get rid of tiny contours first
     contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min(tiny,alim[0])]
     
-    N = len(contours)
+    N = max(1,len(contours))
     low_area = [cv2.contourArea(cnt) <= alim[0] for cnt in contours]
     high_area = [cv2.contourArea(cnt) >= alim[1] for cnt in contours]
     low_aspect = [getaspect(cnt) <= arlim[0] for cnt in contours]
