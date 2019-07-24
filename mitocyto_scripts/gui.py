@@ -56,6 +56,7 @@ def key(event,keymap):
     if k == "Escape":
         root.destroy()
         root.quit()
+        return()
     if k == "space":
         showcontours = not showcontours
     if k == "z":
@@ -72,7 +73,11 @@ def key(event,keymap):
             thresh = mc.makethresholded(arrs[-1],False, d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
             imnew,contours = mc.makeContours(thresh,showedges = True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=False)
             #title = "mitocyto Contours"
-            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(fnames[current],imtype,keymap[current])
+            if current<len(keymap):
+                kk = keymap[current]
+            else:
+                kk = ""
+            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],kk)
             C.delete("dot")
             root.title(title)
             blobs = imnew.resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
@@ -160,7 +165,7 @@ def main():
     print("command executed:")
     print(" ".join(sys.argv))
 
-    ftxt = '''20190605_ROI 03_3 excel.txt'''
+    fext = [".imc",".IMC"]
     keymap = "1234567890qwertyuiopasdfg"
     add_edit = "mitocyto.png"
     folder = "."
@@ -172,10 +177,15 @@ def main():
     imtype = "raw"
 
     allfiles = os.listdir(folder)
-    if(ftxt in allfiles):
-        fnames, current, arrs = mc.makeArrsFromText(ftxt,edge = "Dystrophin", add_edit = "mitocyto.png")
+    imcfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".imc",".IMC"]]
+    if(len(imcfiles)>0):
+        print("Analysing data from "+imcfiles[0]+" only...")
+        fnames, current, arrs = mc.makeArrsFromText(imcfiles[0],edge = "Dystrophin", add_edit = "mitocyto.png")
+        froots = fnames
     else:
         fnames, current, arrs = mc.makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png")
+        fnames = fnames[0:-2]
+        froots = [fname.strip(".ome.tiff") for fname in fnames]
 
     clearEdges()
 
@@ -192,9 +202,11 @@ def main():
     #Start the GUI
     root = tk.Tk()
     imtype = "raw"
-    print(len(fnames))
-    print(fnames[0:10])
-    title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],keymap[current])
+    if current<len(keymap):
+        kk = keymap[current]
+    else:
+        kk = ""
+    title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],kk)
     root.title(title)
 
     # Prepare to resize images to fit in screen, if necessary
@@ -219,7 +231,7 @@ def main():
     C.bind("<B1-Motion>", lambda event: paint(event, colour = "white", rad = 1, sclx = sclx, scly = scly))
     C.bind("<B3-Motion>", lambda event: paint(event, colour = "black", rad = 5, sclx = sclx, scly = scly))
     C.bind("<Shift-Button-1>", lambda event: fillcontour(event))
-    C.bind("<KeyPress>", lambda event:  checkmod(event, keymap = keymap, press = True))
+    C.bind("<KeyPress>", lambda event: checkmod(event, keymap = keymap, press = True))
     C.bind("<KeyRelease>", lambda event: checkmod(event, keymap = keymap, press = False))
             
     C.pack()
@@ -238,7 +250,7 @@ def main():
     
     print("Getting contours & saving preview... "+str(timer()))
     arr = arrs[-1]
-    arrs = None
+    #arrs = None
     thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
     rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
@@ -254,10 +266,11 @@ def main():
     yvals = [c[1] for c in centres]
 
     print("Opening channel images... "+str(timer()))
-    fnames = fnames[0:-2]
-    froots = [fname.strip(".ome.tiff") for fname in fnames]
+    print(froots)
+    print(arrs[-1])
+    arrays = {froot:arrs[i] for i,froot in enumerate(froots)}
     #images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
-    arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
+    #arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
     #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
     #psims = {froot:mc.arrtorgb(arrays[froot]) for froot in froots}
 

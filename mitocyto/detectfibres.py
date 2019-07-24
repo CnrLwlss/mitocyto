@@ -66,12 +66,13 @@ def makeArrsFromText(fname,edge = "Dystrophin", add_edit = "mitocyto.png",pseudo
 
     arrs = [bigarr[:,:,i] for i,ch in enumerate(chans)]
     arrs = arrs + [meanarr,None]
-    chans1 = chans1 + ["Mean.jpg","Edges.jpg"]
-    fnames = [ch+".jpg" for ch in chans1]
+    chans1 = chans1 + ["Mean","Edges"]
+    fnames = [ch for ch in chans1]
     if pseudoimages:
         for i,arr in enumerate(arrs):
-            im = Image.fromarray(np.array(np.round(arr),np.uint8))
-            im.save(fnames[i])
+            if arr is not None:
+                im = Image.fromarray(np.array(np.round(arr),np.uint8))
+                im.save(fnames[i]+".jpg")
     return((fnames,current,arrs))
 
 def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True):
