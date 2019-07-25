@@ -15,12 +15,12 @@ import sys
 import re
 
 def clearEdges():
-    global arrs,edgeim
-    arrs[-1] = np.zeros(arrs[0].shape,dtype=np.uint8)
-    edgeim = Image.fromarray(arrs[-1])
+    global arrs,edgeim, froots
+    arrs["Edges"] = np.zeros(arrs[froots[0]].shape,dtype=np.uint8)
+    edgeim = Image.fromarray(arrs["Edges"])
 
 def key(event,keymap):
-    global img,current,ims, arrs, showedges, showcontours, draw, imtype, edgeim, contours, inp
+    global img,current,ims, arrs, showedges, showcontours, draw, imtype, edgeim, contours, inp, froots
     
     curr0 = current
     k = event.keysym
@@ -30,7 +30,7 @@ def key(event,keymap):
     #print("pressed", k)
     if k in keymap:
         i = keymap.find(k)
-        if i < len(fnames):
+        if i < len(froots):
             current = i
     if k =="x":
         print("Clearing edge image")
@@ -50,9 +50,9 @@ def key(event,keymap):
         else:
             imtype = "edgemap"
     if k == "Left":
-        current = (current - 1)%len(fnames)
+        current = (current - 1)%len(froots)
     if k == "Right":
-        current = (current + 1)%len(fnames)
+        current = (current + 1)%len(froots)
     if k == "Escape":
         root.destroy()
         root.quit()
@@ -69,29 +69,29 @@ def key(event,keymap):
         current = -1
     if not modifier:
         if showcontours:
-            arrs[-1] = np.array(edgeim, dtype=np.uint8)
-            thresh = mc.makethresholded(arrs[-1],False, d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
+            arrs["Edges"] = np.array(edgeim, dtype=np.uint8)
+            thresh = mc.makethresholded(arrs["Edges"],False, d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
             imnew,contours = mc.makeContours(thresh,showedges = True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=False)
             #title = "mitocyto Contours"
             if current<len(keymap):
                 kk = keymap[current]
             else:
                 kk = ""
-            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],kk)
+            title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,froots[current],kk)
             C.delete("dot")
             root.title(title)
             blobs = imnew.resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
-            chann = Image.fromarray(mc.arrtorgb(arrs[current])).resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
+            chann = Image.fromarray(mc.arrtorgb(arrs[froots[current]])).resize((wnew,hnew),Image.ANTIALIAS).convert("RGBA")
             merg = Image.blend(blobs,chann,alpha=0.6)
             img = ImageTk.PhotoImage(merg)
             C.itemconfig(C_image, image=img)
             #showcontours = False
         else:
             if imtype == "raw":
-                arrnew = arrs[current]
+                arrnew = arrs[froots[current]]
                 #title = "mitocyto Raw "+title
             if imtype == "threshold":
-                arrnew = mc.getthresh(arrs[current])
+                arrnew = mc.getthresh(arrs[froots[current]])
                 #title = "mitocyto Threshold "+title  
             if imtype == "edgemap":
                 arrnew = mc.edgesFromGrad(arrs[current],block_size=51)
@@ -102,14 +102,14 @@ def key(event,keymap):
                 imnew = Image.fromarray(mc.makepseudo(arrnew))
             #if current is not curr0:
             C.delete("dot")
-            if current == len(fnames):
+            if current == len(froots):
                 fn = "AVERAGE"
                 sc = ""
-            elif current == len(fnames)+1:
+            elif current == len(froots)+1:
                 fn = "EDGE"
                 sc = "z"
-            elif 0 <= current < len(fnames):
-                fn = fnames[current]
+            elif 0 <= current < len(froots):
+                fn = froots[current]
                 if 0<= current < len(keymap):
                     sc = keymap[current]
                 else:
@@ -123,9 +123,9 @@ def key(event,keymap):
             C.itemconfig(C_image, image=img)
     if copying:
         print("Copying current image to edge image")
-        arrs[-1] = np.array(edgeim, dtype=np.uint8)
-        arrs[-1] = np.maximum(arrs[-1],arrnew)
-        edgeim = Image.fromarray(mc.makepseudo(arrs[-1]))
+        arrs["Edges"] = np.array(edgeim, dtype=np.uint8)
+        arrs["Edges"] = np.maximum(arrs["Edges"],arrnew)
+        edgeim = Image.fromarray(mc.makepseudo(arrs["Edges"]))
         draw = ImageDraw.Draw(edgeim)
 
 def paint(event, colour = "white", rad = 2, sclx=1.0, scly=1.0):
@@ -144,8 +144,8 @@ def fillcontour(event):
     clicked = [(i,cnt) for i,cnt in enumerate(contours) if cv2.pointPolygonTest(cnt, point, measureDist = False) >= 0]
     for i,cnt in clicked:
         print("Deleting contour number "+str(i+1))
-        cv2.drawContours(arrs[-1],[cnt],-1,(255),cv2.FILLED)
-    edgeim = Image.fromarray(mc.makepseudo(arrs[-1]))
+        cv2.drawContours(arrs["Edges"],[cnt],-1,(255),cv2.FILLED)
+    edgeim = Image.fromarray(mc.makepseudo(arrs["Edges"]))
     draw = ImageDraw.Draw(edgeim)
 
 def checkmod(event, keymap, modkeys = ["Shift_L","Shift_R"], press = True):
@@ -158,7 +158,7 @@ def checkmod(event, keymap, modkeys = ["Shift_L","Shift_R"], press = True):
         key(event, keymap)
 
 def main():       
-    global arrs, edgeim, current, fnames, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly, inp
+    global arrs, edgeim, current, froots, showedges, showcontours, modifier, imtype, C, root, draw, wnew, hnew, C_image,sclx,scly, inp
     print("mitocyto "+mc.__version__)
     print("opencv "+cv2.__version__)
     inp = mc.getCommands()
@@ -180,12 +180,9 @@ def main():
     imcfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".imc",".IMC"]]
     if(len(imcfiles)>0):
         print("Analysing data from "+imcfiles[0]+" only...")
-        fnames, current, arrs = mc.makeArrsFromText(imcfiles[0],edge = "Dystrophin", add_edit = "mitocyto.png")
-        froots = fnames
+        fnames, froots, current, arrs = mc.makeArrsFromText(imcfiles[0],edge = "Dystrophin", add_edit = "mitocyto.png")
     else:
-        fnames, current, arrs = mc.makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png")
-        fnames = fnames[0:-2]
-        froots = [fname.strip(".ome.tiff") for fname in fnames]
+        fnames, froots, current, arrs = mc.makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png")
 
     clearEdges()
 
@@ -193,11 +190,11 @@ def main():
     averagefile = os.path.join(output,"AVE_"+add_edit)
     if os.path.isfile(edgemapfile):
         edgeim = Image.open(edgemapfile)
-        arrs[-1] = np.array(edgeim,dtype=np.uint8)
+        arrs["Edges"] = np.array(edgeim,dtype=np.uint8)
 
-    edgeim = Image.fromarray(mc.makepseudo(arrs[-1]))
+    edgeim = Image.fromarray(mc.makepseudo(arrs["Edges"]))
     draw = ImageDraw.Draw(edgeim)
-    h,w = arrs[current].shape
+    h,w = arrs[froots[current]].shape
 
     #Start the GUI
     root = tk.Tk()
@@ -206,7 +203,7 @@ def main():
         kk = keymap[current]
     else:
         kk = ""
-    title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,fnames[current],kk)
+    title = "mitocyto {} {} shortcut: {} press 'h' for help".format(imtype,froots[current],kk)
     root.title(title)
 
     # Prepare to resize images to fit in screen, if necessary
@@ -223,7 +220,7 @@ def main():
     wnew,hnew = int(round(scl*w)), int(round(scl*h))
     sclx,scly = float(wnew)/float(w), float(hnew)/float(h)
 
-    img = ImageTk.PhotoImage(Image.fromarray(mc.makepseudo(arrs[current])).resize((wnew,hnew),Image.ANTIALIAS))
+    img = ImageTk.PhotoImage(Image.fromarray(mc.makepseudo(arrs[froots[current]])).resize((wnew,hnew),Image.ANTIALIAS))
     C = tk.Canvas(root,width = wnew, height = hnew)
     C_image = C.create_image(0,0,image=img,anchor='nw')
 
@@ -237,19 +234,19 @@ def main():
     C.pack()
 
     root.mainloop()
-    arrs[-1] = np.array(edgeim,dtype=np.uint8)
+    arrs["Edges"] = np.array(edgeim,dtype=np.uint8)
 
     timer = mc.startTimer()
     print("Saving edited cell membrane file... "+str(timer()))
-    Image.fromarray(mc.makepseudo(arrs[-1])).save(edgemapfile)
+    Image.fromarray(mc.makepseudo(arrs["Edges"])).save(edgemapfile)
     print("Saving average of all channels... "+str(timer()))
-    Image.fromarray(mc.makepseudo(arrs[-2])).save(averagefile)
+    Image.fromarray(mc.makepseudo(arrs["Mean"])).save(averagefile)
 
     #for i in range(0, len(arrs)-2):
     #    Image.fromarray(mc.makepseudo(arrs[i])).save(files[i]+".png")
     
     print("Getting contours & saving preview... "+str(timer()))
-    arr = arrs[-1]
+    arr = arrs["Edges"]
     #arrs = None
     thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
     rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
@@ -266,19 +263,16 @@ def main():
     yvals = [c[1] for c in centres]
 
     print("Opening channel images... "+str(timer()))
-    print(froots)
-    print(arrs[-1])
-    arrays = {froot:arrs[i] for i,froot in enumerate(froots)}
     #images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
     #arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
     #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
     #psims = {froot:mc.arrtorgb(arrays[froot]) for froot in froots}
 
     print("Average values for each contour mask in each image... "+str(timer()))
-    avelogs = {froot:[np.exp(np.mean(np.log(arrays[froot][msk[0],msk[1]]+1))) for msk in masks] for froot in froots}
-    aves = {froot:[np.mean(arrays[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
-    meds = {froot:[np.median(arrays[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
-    fracpos = {froot:[np.sum(arrays[froot][msk[0],msk[1]]>0)/len(msk[0]) for msk in masks] for froot in froots}
+    avelogs = {froot:[np.exp(np.mean(np.log(arrs[froot][msk[0],msk[1]]+1))) for msk in masks] for froot in froots}
+    aves = {froot:[np.mean(arrs[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
+    meds = {froot:[np.median(arrs[froot][msk[0],msk[1]]+1) for msk in masks] for froot in froots}
+    fracpos = {froot:[np.sum(arrs[froot][msk[0],msk[1]]>0)/len(msk[0]) for msk in masks] for froot in froots}
 
     print("Writing output to text file... "+str(timer()))
     res = open(os.path.join(output,"results.csv"),"w")
@@ -287,11 +281,11 @@ def main():
     for j,froot in enumerate(froots):
         print("Writing "+froot+" results to file... "+str(timer()))
         #res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.abspath(folder).split("\\")[-1],os.path.abspath(os.path.join(folder,fnames[j]))]) for i,ml in enumerate(avelogs[froot])]))
-        res.writelines("\n".join([",".join([str(ml),str(i+1),froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(aves[froot])]))
+        res.writelines("\n".join([",".join([str(ml),str(i+1),fnames[j],os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(aves[froot])]))
         res.write("\n")
-        res.writelines("\n".join([",".join([str(ml),str(i+1),"LOG_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(avelogs[froot])]))
+        res.writelines("\n".join([",".join([str(ml),str(i+1),"LOG_"+fnames[j],os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(avelogs[froot])]))
         res.write("\n")
-        res.writelines("\n".join([",".join([str(ml),str(i+1),"MED_"+froot,os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(meds[froot])]))
+        res.writelines("\n".join([",".join([str(ml),str(i+1),"MED_"+fnames[j],os.path.basename(os.path.dirname(os.path.abspath(folder))),os.path.basename(os.path.abspath(folder))]) for i,ml in enumerate(meds[froot])]))
         res.write("\n")
     for channel,vals in zip(["Area","AspectRatio","Perimeter","Circularity","xCoord","yCoord"],[areas,aspects,perims,circs,xvals,yvals]):
         print("Writing "+channel+" results to file... "+str(timer()))

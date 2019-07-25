@@ -21,6 +21,9 @@ def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png"):
     allfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".tiff",".TIFF",".jpg",".JPG",".jpeg",".JPEG",".png",".PNG"]]
     files = [f for f in allfiles if add_edit not in f]
     files.sort()
+    
+    froots = [fname.strip(".ome.tiff") for fname in files]
+    froots = [os.path.splitext(f)[0] for f in froots]
 
     isedge = [edge.lower() in f.lower() for f in files]
     edgeind = [i for i, x in enumerate(isedge) if x]
@@ -28,18 +31,19 @@ def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png"):
         current = edgeind[0]
     else:
         current = 0
-    arrs = [np.array(Image.open(f)) for f in files]
-    bigarr = np.zeros(arrs[0].shape+(sum([not i for i in isedge]),),dtype=np.uint8)
+    arrs = {froots[i]:np.array(Image.open(f)) for i,f in enumerate(files)}
+    bigarr = np.zeros(arrs[froots[0]].shape+(sum([not i for i in isedge]),),dtype=np.uint8)
     ind = 0
-    for i,arr in enumerate(arrs):
+    for i,f in enumerate(froots):
         if not isedge[i]:
-            bigarr[:,:,ind]=arr
+            bigarr[:,:,ind]=arrs[f]
             ind += 1
     meanarr = np.mean(bigarr,2)
     bigarr = None
-    arrs = arrs + [meanarr,None]
-    fnames = files + ["Mean","Edges"]
-    return((fnames,current, arrs))
+    arrs["Mean"] = meanarr
+    arrs["Edges"] = None
+    froots = froots + ["Mean","Edges"]
+    return((froots,froots,current,arrs))
 
 def makeArrsFromText(fname,edge = "Dystrophin", add_edit = "mitocyto.png",pseudoimages=True):
     dat = pd.read_csv(fname,sep="\t")
@@ -64,16 +68,17 @@ def makeArrsFromText(fname,edge = "Dystrophin", add_edit = "mitocyto.png",pseudo
 
     meanarr = np.mean(bigarr,2)
 
-    arrs = [bigarr[:,:,i] for i,ch in enumerate(chans)]
-    arrs = arrs + [meanarr,None]
-    chans1 = chans1 + ["Mean","Edges"]
-    fnames = [ch for ch in chans1]
+    arrs = {ch:bigarr[:,:,i] for i,ch in enumerate(chans1)}
+    arrs["Mean"] = meanarr
+    arrs["Edges"] = None
+    froots = chans1 + ["Mean","Edges"]
+    chans = chans + ["Mean","Edges"]
     if pseudoimages:
-        for i,arr in enumerate(arrs):
-            if arr is not None:
-                im = Image.fromarray(np.array(np.round(arr),np.uint8))
-                im.save(fnames[i]+".jpg")
-    return((fnames,current,arrs))
+        for f in froots:
+            if arrs[f] is not None:
+                im = Image.fromarray(makepseudo(arrs[f]))
+                im.save(f+".jpg", quality=90, optimize=True, progressive=True)
+    return((chans,froots,current,arrs))
 
 def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
