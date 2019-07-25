@@ -262,7 +262,7 @@ def main():
     xvals = [c[0] for c in centres]
     yvals = [c[1] for c in centres]
 
-    print("Opening channel images... "+str(timer()))
+    #print("Opening channel images... "+str(timer()))
     #images = {froot:Image.open(os.path.join(folder,fnames[i])) for i,froot in enumerate(froots)}
     #arrays = {froot:np.array(Image.open(os.path.join(folder,fnames[i])),dtype=np.uint16) for i,froot in enumerate(froots)}
     #arrays = {froot:np.array(images[froot],dtype=np.uint16) for froot in froots}
