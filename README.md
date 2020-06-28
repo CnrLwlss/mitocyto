@@ -6,6 +6,8 @@ The edgemap is used to identify distinct areas in the source images (also called
 
 ## Installation
 
+The latest version is v0.0.19: source code is [here](https://github.com/CnrLwlss/mitocyto/releases/tag/v0.0.19).
+
 mitocyto is a Python program and the latest release of the software is packaged and distributed on PYPI.  If you have a working Python 3 installation, you can install mitocyto and all of its dependencies simply by executing the following at the command line:
 
 ```shell
