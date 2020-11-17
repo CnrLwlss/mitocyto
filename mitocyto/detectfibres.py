@@ -211,14 +211,17 @@ def arrtorgb(arr):
     rgb[:,:,2] = arrp
     return(rgb)
 
-def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED):
+def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED, blackandwhite = False):
     rgb = arrtorgb(arr)
     uselabs = len(labels)==len(contours)
     for i,cnt in enumerate(contours):
         h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
         r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
         col = np.random.randint(50,200)
-        cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
+        if blackandwhite:
+            cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
+        else
+            cv2.drawContours(rgb,[cnt],-1,(255,255,255),thickness)
         if uselabs and arr.shape[1]>1750:
             cX,cY = [int(round(x)) for x in getcentre(cnt)]
             cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5*arr.shape[1]/2656.0, (255, 255, 255), 2)
