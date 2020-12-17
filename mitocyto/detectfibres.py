@@ -210,15 +210,15 @@ def arrtorgb(arr):
     rgb[:,:,1] = arrp 
     rgb[:,:,2] = arrp
     return(rgb)
-
-def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED, blackandwhite = False):
+# Added an argument "colour" that determine the colour of output label i.e. colour or black and white
+def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED, colour = True):
     rgb = arrtorgb(arr)
     uselabs = len(labels)==len(contours)
     for i,cnt in enumerate(contours):
         h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
         r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
         col = np.random.randint(50,200)
-        if blackandwhite:
+        if colour:
             cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
         else
             cv2.drawContours(rgb,[cnt],-1,(255,255,255),thickness)
