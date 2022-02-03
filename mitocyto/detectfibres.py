@@ -220,11 +220,11 @@ def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED, colour = True):
         col = np.random.randint(50,200)
         if colour:
             cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
-        else
+        else:
             cv2.drawContours(rgb,[cnt],-1,(255,255,255),thickness)
-        if uselabs and arr.shape[1]>1750:
+        if uselabs:
             cX,cY = [int(round(x)) for x in getcentre(cnt)]
-            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.5*arr.shape[1]/2656.0, (255, 255, 255), 2)
+            cv2.putText(rgb, str(labels[i]), (cX-5, cY+5),cv2.FONT_HERSHEY_SIMPLEX, 0.75*arr.shape[1]/2656.0, (175, 175, 175), 1)
     return(rgb)
 
 def drawcentres(arr,contours,labels=[],ptrad=3):
