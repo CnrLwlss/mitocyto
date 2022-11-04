@@ -62,17 +62,37 @@ class SelectFromCollection:
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    import pandas as pd
+
+    warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
+    warrendat = pd.read_csv(warrenurl,sep="\t")
+    mitochan = "VDAC1"
+    oxchans = ["NDUFB8","UqCRC2","SDHA","COX4+4L2","GRIM19","MTCO1","OSCP"]
+    pats = sorted(set(warrendat.patient_id))
+    pats.sort()
+
+    pat = "P01"
+    chan = "NDUFB8"
+    xpat = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)])
+    ypat = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)])
+
+    xctrl = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="Control")])
+    yctrl = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="Control")])
+    
+    
 
     # Fixing random state for reproducibility
     np.random.seed(19680801)
 
     data = np.random.rand(100, 2)
 
-    subplot_kw = dict(xlim=(0, 1), ylim=(0, 1), autoscale_on=False)
+    subplot_kw = dict(xlim=(0, 1.2*np.max(np.array(xpat,xctrl))), ylim=(0, 1.2*np.max(np.array(ypat,yctrl))), autoscale_on=False)
     fig, ax = plt.subplots(subplot_kw=subplot_kw)
 
-    pts = ax.scatter(data[:, 0], data[:, 1], s=80)
-    selector = SelectFromCollection(ax, pts)
+    ctrlpts = plt.scatter(xctrl, yctrl, s=20,c="gray")
+    patpts = plt.scatter(xpat,ypat,s=20,c="red")
+    plt.show()
+    selector = SelectFromCollection(ax, patpts)
 
     def accept(event):
         if event.key == "enter":
@@ -86,3 +106,4 @@ if __name__ == '__main__':
     ax.set_title("Press enter to accept selected points.")
 
     plt.show()
+    print(selector.ind)
