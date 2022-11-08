@@ -80,7 +80,7 @@ def makeArrsFromText(fname,edge = "Dystrophin", add_edit = "mitocyto.png",pseudo
                 im.save(f+".jpg", quality=90, optimize=True, progressive=True)
     return((chans,froots,current,arrs))
 
-def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True):
+def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500), arlim=(0,10.0), clim=(0,100), cvxlim=(0.75,1.0),numbercontours=True,colours=True):
     arr[0,:-1] = arr[:-1,-1] = arr[-1,::-1] = arr[-2:0:-1,0] = arr.max()
     if int(cv2.__version__.split(".")[0])>=3:
       contours,hierarchy = cv2.findContours(arr, cv2.RETR_CCOMP,2)
@@ -97,7 +97,7 @@ def makeContours(arr,showedges = True, thickness = cv2.FILLED, alim=(500,17500),
         todraw = arr
     else:
         todraw = np.zeros(arr.shape,dtype=np.uint8)
-    rgb = Image.fromarray(drawcontours(todraw,contours,clabs,thickness=thickness))
+    rgb = Image.fromarray(drawcontours(todraw,contours,clabs,thickness=thickness,colour=colours))
     return((rgb,contours))
 
 def getthresh(arr, block_size=221):
@@ -210,16 +210,21 @@ def arrtorgb(arr):
     rgb[:,:,1] = arrp 
     rgb[:,:,2] = arrp
     return(rgb)
+
 # Added an argument "colour" that determine the colour of output label i.e. colour or black and white
 def drawcontours(arr,contours,labels=[],thickness=cv2.FILLED, colour = True):
     rgb = arrtorgb(arr)
     uselabs = len(labels)==len(contours)
+    ccols = [(0,0,0) for cnt in contours]
+    while len(set(ccols)) != len(contours):
+        for i,cnt in enumerate(contours):
+            h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
+            r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
+            ccols[i] = (r,g,b)
+    
     for i,cnt in enumerate(contours):
-        h,s,l = np.random.random(), 1.0, 0.4 + np.random.random()/5.0
-        r,g,b = [int(256*j) for j in colorsys.hls_to_rgb(h,l,s)]
-        col = np.random.randint(50,200)
         if colour:
-            cv2.drawContours(rgb,[cnt],-1,(r,g,b),thickness)
+            cv2.drawContours(rgb,[cnt],-1,ccols[i],thickness)
         else:
             cv2.drawContours(rgb,[cnt],-1,(255,255,255),thickness)
         if uselabs:
