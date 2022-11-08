@@ -249,8 +249,10 @@ def main():
     arr = arrs["Edges"]
     #arrs = None
     thresh = mc.makethresholded(arr,False,d=inp.smoothdiam,sigmaColor=inp.smoothsig,sigmaSpace=inp.smoothsig,blockSize=inp.threshblock)
-    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True)
+    rgb,contours = mc.makeContours(thresh,showedges=True,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=True,colours=True)
     rgb.save(os.path.join(output,"CONTOURS_"+add_edit))
+    rgbml,contours = mc.makeContours(thresh,showedges=False,alim=(inp.areamin,inp.areamax),arlim=(inp.ratiomin,inp.ratiomax),clim=(inp.circmin,inp.circmax),cvxlim=(inp.convexmin, inp.convexmax),numbercontours=False,colours=True)
+    rgbml.save(os.path.join(output,"ML_CONTOURS_"+add_edit))
     print("Building masks from contours... "+str(timer()))
     masks = [mc.makemask(arr.shape,cnt) for cnt in contours]
     print("Building measures from contours... "+str(timer()))
