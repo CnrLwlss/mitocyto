@@ -49,13 +49,14 @@ class SelectFromCollection:
         path = Path(verts)
         self.ind = np.nonzero(path.contains_points(self.xys))[0]
         self.fc[:, -1] = self.alpha_other
-        self.fc[self.ind, -1] = 1
+        self.fc[self.ind, -1] = 1.0
+        print(self.fc)
         self.collection.set_facecolors(self.fc)
         self.canvas.draw_idle()
 
     def disconnect(self):
         self.lasso.disconnect_events()
-        self.fc[:, -1] = 1
+        #self.fc[:, -1] = 1
         self.collection.set_facecolors(self.fc)
         self.canvas.draw_idle()
 
@@ -63,9 +64,15 @@ class SelectFromCollection:
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pandas as pd
+    import os
 
     warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
-    warrendat = pd.read_csv(warrenurl,sep="\t")
+    warrenfile = "dat.txt"
+    if not os.path.isfile(warrenfile):
+        warrendat = pd.read_csv(warrenurl,sep="\t")
+        warrendat.to_csv(warrenfile,sep="\t")
+    else:
+        warrendat = pd.read_csv(warrenfile,sep="\t")
     mitochan = "VDAC1"
     oxchans = ["NDUFB8","UqCRC2","SDHA","COX4+4L2","GRIM19","MTCO1","OSCP"]
     pats = sorted(set(warrendat.patient_id))
@@ -73,37 +80,40 @@ if __name__ == '__main__':
 
     pat = "P01"
     chan = "NDUFB8"
-    xpat = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)])
-    ypat = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)])
 
-    xctrl = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="Control")])
-    yctrl = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="Control")])
-    
-    
+    def selectFibres(ftype="deficient"):
+        xpat = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)])
+        ypat = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)])
 
-    # Fixing random state for reproducibility
-    np.random.seed(19680801)
+        xctrl = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="control")])
+        yctrl = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="control")])
 
-    data = np.random.rand(100, 2)
+        maxx = np.max(np.concatenate((xpat.values,xctrl.values)))
+        maxy = np.max(np.concatenate((ypat.values,yctrl.values)))
 
-    subplot_kw = dict(xlim=(0, 1.2*np.max(np.array(xpat,xctrl))), ylim=(0, 1.2*np.max(np.array(ypat,yctrl))), autoscale_on=False)
-    fig, ax = plt.subplots(subplot_kw=subplot_kw)
+        subplot_kw = dict(xlim=(-0.1*maxx, 1.2*maxx), ylim=(-0.1*maxy, 1.2*maxy), autoscale_on=False)
+        fig, ax = plt.subplots(subplot_kw=subplot_kw)
 
-    ctrlpts = plt.scatter(xctrl, yctrl, s=20,c="gray")
-    patpts = plt.scatter(xpat,ypat,s=20,c="red")
-    plt.show()
-    selector = SelectFromCollection(ax, patpts)
+        ctrlpts = plt.scatter(xctrl, yctrl, s=20,color=[0.0,0.0,0.0,0.1],edgecolors=None,linewidths=0.0)
+        patpts = plt.scatter(xpat,ypat,s=20,color=[1.0,0.0,0.0,0.1],edgecolors=None,linewidths=0.0)
+        
+        selector = SelectFromCollection(ax, patpts,alpha_other=0.05)
 
-    def accept(event):
-        if event.key == "enter":
-            print("Selected points:")
-            print(selector.xys[selector.ind])
-            selector.disconnect()
-            ax.set_title("")
-            fig.canvas.draw()
+        def accept(event):
+            if event.key == "enter":
+                #print("Selected points:")
+                #print(selector.xys[selector.ind])
+                selector.disconnect()
+                #ax.set_title("")
+                plt.close()
 
-    fig.canvas.mpl_connect("key_press_event", accept)
-    ax.set_title("Press enter to accept selected points.")
+        fig.canvas.mpl_connect("key_press_event", accept)
+        ax.set_title("Select and press enter to define selected red points as "+ftype)
 
-    plt.show()
-    print(selector.ind)
+        plt.show()
+        res = np.full(len(xpat),False)
+        res[selector.ind] = True
+        return(res)
+    deficient = selectFibres("deficient")
+    normal = selectFibres("normal")
+    overexp = selectFibres("overexpressing")
