@@ -114,6 +114,12 @@ if __name__ == '__main__':
         res = np.full(len(xpat),False)
         res[selector.ind] = True
         return(res)
-    deficient = selectFibres("deficient")
-    normal = selectFibres("normal")
-    overexp = selectFibres("overexpressing")
+    mclass = dict()
+    for ftype in ["deficient","normal","overexpressing"]:
+            mclass[ftype] = selectFibres(ftype)
+            wd = warrendat[(warrendat.channel==chan)&(warrendat.patient_id==pat)].copy()
+            wd.channel = chan+"_MCLASS_DEFICIENT"
+            wd.value = mclass[ftype]
+            warrendat = pd.concat([warrendat,wd])
+            
+    
