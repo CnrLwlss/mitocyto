@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
 
+class Found(Exception): pass
 
 class SelectFromCollection:
     """
@@ -60,7 +61,7 @@ class SelectFromCollection:
         self.canvas.draw_idle()
 
 
-if __name__ == '__main__':
+def main():
     import matplotlib.pyplot as plt
     import pandas as pd
     import os
@@ -68,6 +69,7 @@ if __name__ == '__main__':
     warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
     warrenfile = "dat.txt"
     if not os.path.isfile(warrenfile):
+        print("No dat.txt file found, downloading data from Warren et al. (2020)...")
         warrendat = pd.read_csv(warrenurl,sep="\t")
         warrendat.to_csv(warrenfile,sep="\t")
     else:
@@ -119,6 +121,10 @@ if __name__ == '__main__':
               if event.key == "enter":
                 selector.disconnect()
                 plt.close()
+              if event.key == "q":
+                selector.disconnect()
+                plt.close()
+                selector.ind = "BREAK!"
 
             fig.canvas.mpl_connect("key_press_event", accept)
             ax.set_title(pat+": Select and press enter to define selected "+pcstr+" points as "+ftype)
@@ -127,6 +133,9 @@ if __name__ == '__main__':
             figManager.window.showMaximized()
 
             plt.show()
+            if selector.ind=="BREAK!":
+                res = "BREAK!"
+                return(res)
             res = np.full(len(xpat),False)
             res[selector.ind] = True
             return(res)
@@ -134,11 +143,19 @@ if __name__ == '__main__':
         mclass = dict()
         for ftype in ["deficient","overexp"]:
           mclass[ftype] = selectFibres(ftype)
+          if mclass[ftype]=="BREAK!":
+              print("Saving partial classification file...")
+              warrendat.to_csv("dat_with_class_partial.txt",sep="\t")
+              raise Found
           wd = warrendat[(warrendat.channel==chan)&(warrendat.patient_id==pat)].copy()
           wd.channel = chan+"_MCLASS_"+ftype.upper()
           wd.value = mclass[ftype]
           warrendat = pd.concat([warrendat,wd])
 
     warrendat.to_csv("dat_with_class.txt",sep="\t")
-            
-    
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Found:
+        print("Finished early and saved partial classification file")

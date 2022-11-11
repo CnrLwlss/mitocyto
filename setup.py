@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version='0.0.21'
+version='0.0.22'
 f=open('mitocyto/version.py',"w")
 f.write("__version__='{}'".format(version))
 f.close()
@@ -20,7 +20,8 @@ setup(name='mitocyto',
                                        "mcmerge = mitocyto_scripts.getResults:main",
                                        "mcaddtags = mitocyto_scripts.tagFiles:addtags",
                                        "mcremovetags = mitocyto_scripts.tagFiles:removetags",
-                                       "mcall = mitocyto_scripts.mitocytoAllTheThings:main"]},
+                                       "mcall = mitocyto_scripts.mitocytoAllTheThings:main",
+                                       "mcclass = mitocyto_scripts.manual_classification:main"]},
       author='Conor Lawless',
       author_email='cnr.lwlss@gmail.com',
       url='http://cnr.lwlss.net',
