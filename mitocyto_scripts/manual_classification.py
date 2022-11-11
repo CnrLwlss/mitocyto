@@ -50,7 +50,6 @@ class SelectFromCollection:
         self.ind = np.nonzero(path.contains_points(self.xys))[0]
         self.fc[:, -1] = self.alpha_other
         self.fc[self.ind, -1] = 1.0
-        print(self.fc)
         self.collection.set_facecolors(self.fc)
         self.canvas.draw_idle()
 
@@ -78,48 +77,68 @@ if __name__ == '__main__':
     pats = sorted(set(warrendat.patient_id))
     pats.sort()
 
-    pat = "P01"
-    chan = "NDUFB8"
+    for pat in pats:
+      for chan in oxchans:
+        def selectFibres(ftype="deficient"):
+            xpat = warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)]
+            ypat = warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)]
 
-    def selectFibres(ftype="deficient"):
-        xpat = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)])
-        ypat = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)])
+            xctrl = warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="control")]
+            yctrl = warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="control")]
+            
+            if ftype=="deficient":
+              patcol = [1.0,0.0,0.0,0.3]
+              pcstr = "red"
+              xpat = np.log(xpat)
+              ypat = np.log(ypat)
+              xctrl = np.log(xctrl)
+              yctrl = np.log(yctrl)
+              xlab = "log("+mitochan+")"
+              ylab = "log("+chan+")"
+            if ftype=="overexp":
+              patcol = [0.0,0.0,1.0,0.2]
+              pcstr = "blue"
+              xlab = mitochan
+              ylab = chan
+              
+            maxx = np.max(np.concatenate((xpat.values,xctrl.values)))
+            maxy = np.max(np.concatenate((ypat.values,yctrl.values)))
 
-        xctrl = np.log(warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="control")])
-        yctrl = np.log(warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="control")])
+            subplot_kw = dict(xlim=(-0.1*maxx, 1.2*maxx), ylim=(-0.1*maxy, 1.2*maxy), autoscale_on=False)
+            fig, ax = plt.subplots(subplot_kw=subplot_kw)
 
-        maxx = np.max(np.concatenate((xpat.values,xctrl.values)))
-        maxy = np.max(np.concatenate((ypat.values,yctrl.values)))
+            ctrlpts = plt.scatter(xctrl, yctrl, s=30,color=[0.0,0.0,0.0,0.2],edgecolors=None,linewidths=0.0)
+            patpts = plt.scatter(xpat,ypat,s=10,color=patcol,edgecolors=None,linewidths=0.0)
 
-        subplot_kw = dict(xlim=(-0.1*maxx, 1.2*maxx), ylim=(-0.1*maxy, 1.2*maxy), autoscale_on=False)
-        fig, ax = plt.subplots(subplot_kw=subplot_kw)
+            ax.set_xlabel(xlab)
+            ax.set_ylabel(ylab)
+            
+            selector = SelectFromCollection(ax, patpts,alpha_other=0.05)
 
-        ctrlpts = plt.scatter(xctrl, yctrl, s=20,color=[0.0,0.0,0.0,0.1],edgecolors=None,linewidths=0.0)
-        patpts = plt.scatter(xpat,ypat,s=20,color=[1.0,0.0,0.0,0.1],edgecolors=None,linewidths=0.0)
-        
-        selector = SelectFromCollection(ax, patpts,alpha_other=0.05)
-
-        def accept(event):
-            if event.key == "enter":
-                #print("Selected points:")
-                #print(selector.xys[selector.ind])
+            def accept(event):
+              if event.key == "enter":
                 selector.disconnect()
-                #ax.set_title("")
                 plt.close()
 
-        fig.canvas.mpl_connect("key_press_event", accept)
-        ax.set_title("Select and press enter to define selected red points as "+ftype)
+            fig.canvas.mpl_connect("key_press_event", accept)
+            ax.set_title(pat+": Select and press enter to define selected "+pcstr+" points as "+ftype)
 
-        plt.show()
-        res = np.full(len(xpat),False)
-        res[selector.ind] = True
-        return(res)
-    mclass = dict()
-    for ftype in ["deficient","normal","overexpressing"]:
-            mclass[ftype] = selectFibres(ftype)
-            wd = warrendat[(warrendat.channel==chan)&(warrendat.patient_id==pat)].copy()
-            wd.channel = chan+"_MCLASS_DEFICIENT"
-            wd.value = mclass[ftype]
-            warrendat = pd.concat([warrendat,wd])
+            figManager = plt.get_current_fig_manager()
+            figManager.window.showMaximized()
+
+            plt.show()
+            res = np.full(len(xpat),False)
+            res[selector.ind] = True
+            return(res)
+          
+        mclass = dict()
+        for ftype in ["deficient","overexp"]:
+          mclass[ftype] = selectFibres(ftype)
+          wd = warrendat[(warrendat.channel==chan)&(warrendat.patient_id==pat)].copy()
+          wd.channel = chan+"_MCLASS_"+ftype.upper()
+          wd.value = mclass[ftype]
+          warrendat = pd.concat([warrendat,wd])
+
+    warrendat.to_csv("dat_with_class.txt",sep="\t")
             
     
