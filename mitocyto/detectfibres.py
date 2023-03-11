@@ -1,4 +1,5 @@
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 import numpy as np
 import os
 import scipy
@@ -16,10 +17,10 @@ import argparse
 import sys
 import re
 
-def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png"):
+def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png", bypix = "BYPIX"):
     allfiles = os.listdir(folder)
     allfiles = [f for f in allfiles if os.path.splitext(f)[1] in [".tiff",".TIFF",".jpg",".JPG",".jpeg",".JPEG",".png",".PNG"]]
-    files = [f for f in allfiles if add_edit not in f]
+    files = [f for f in allfiles if (add_edit not in f) and (bypix not in f)]
     files.sort()
     
     froots = [fname.strip(".ome.tiff") for fname in files]
@@ -31,7 +32,7 @@ def makeArrs(folder,edge = "Dystrophin", add_edit = "mitocyto.png"):
         current = edgeind[0]
     else:
         current = 0
-    arrs = {froots[i]:np.array(Image.open(f)) for i,f in enumerate(files)}
+    arrs = {froots[i]:np.array(Image.open(f).convert('L')) for i,f in enumerate(files)}
     bigarr = np.zeros(arrs[froots[0]].shape+(sum([not i for i in isedge]),),dtype=np.uint8)
     ind = 0
     for i,f in enumerate(froots):
@@ -264,7 +265,7 @@ def makepseudo(arr,minpercent=5,maxpercent=95):
     if(maxval>minval):
         arr = np.maximum(np.minimum(arr,maxval),minval)
         arr = arr-minval
-        arrf = np.array(arr,dtype=np.float)
+        arrf = np.array(arr,dtype=np.float32)
         arrf = np.array(np.round(255.0*np.minimum(1.0,arrf/(maxval-minval))),dtype=np.uint8)
     else:
         arrf = np.array(arr[:,:],dtype=np.uint8)
