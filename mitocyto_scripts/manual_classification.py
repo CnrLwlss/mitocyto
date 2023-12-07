@@ -135,7 +135,7 @@ def main():
                 figManager.window.showMaximized()
 
             plt.show()
-            if selector.ind=="BREAK!":
+            if type(selector.ind) is str and selector.ind=="BREAK!":
                 res = "BREAK!"
                 return(res)
             res = np.full(len(xpat),False)
