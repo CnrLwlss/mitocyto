@@ -1,4 +1,5 @@
 import numpy as np
+import platform
 
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
@@ -129,8 +130,9 @@ def main():
             fig.canvas.mpl_connect("key_press_event", accept)
             ax.set_title(pat+": Select and press enter to define selected "+pcstr+" points as "+ftype)
 
-            figManager = plt.get_current_fig_manager()
-            figManager.window.showMaximized()
+            if platform.system()=="Windows":
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
 
             plt.show()
             if selector.ind=="BREAK!":
@@ -143,7 +145,7 @@ def main():
         mclass = dict()
         for ftype in ["deficient","overexp"]:
           mclass[ftype] = selectFibres(ftype)
-          if mclass[ftype]=="BREAK!":
+          if np.isin("BREAK!",mclass[ftype]):
               print("Saving partial classification file...")
               warrendat.to_csv("dat_with_class_partial.txt",sep="\t")
               raise Found
