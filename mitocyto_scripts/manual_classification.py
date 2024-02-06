@@ -62,47 +62,48 @@ class SelectFromCollection:
         self.canvas.draw_idle()
 
 
-def main():
+def main(fname="dat.txt",outfname="class_dat.txt",getWarren=True,mitochan="VDAC1",oxchans=["NDUFB8","MTCO1"]):
     import matplotlib.pyplot as plt
     import pandas as pd
     import os
 
-    warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
-    warrenfile = "dat.txt"
-    if not os.path.isfile(warrenfile):
-        print("No dat.txt file found, downloading data from Warren et al. (2020)...")
-        warrendat = pd.read_csv(warrenurl,sep="\t")
-        warrendat.to_csv(warrenfile,sep="\t")
+    if getWarren:
+        warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
+        warrenfile = "Warren_2020_data.txt"
+        if not os.path.isfile(warrenfile):
+            print("No dat.txt file found, downloading data from Warren et al. (2020)...")
+            dat = pd.read_csv(warrenurl,sep="\t")
+            dat.to_csv(warrenfile,sep="\t")
+        else:
+            dat = pd.read_csv(warrenfile,sep="\t")
     else:
-        warrendat = pd.read_csv(warrenfile,sep="\t")
-    mitochan = "VDAC1"
-    oxchans = ["NDUFB8","UqCRC2","SDHA","COX4+4L2","GRIM19","MTCO1","OSCP"]
-    pats = sorted(set(warrendat.patient_id))
+        dat = pd.read_csv(fname,sep="\t")
+            
+    pats = sorted(set(dat.patient_id))
     pats.sort()
 
     for pat in pats:
       for chan in oxchans:
         def selectFibres(ftype="deficient"):
-            xpat = warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_id==pat)]
-            ypat = warrendat.value[(warrendat.channel==chan)&(warrendat.patient_id==pat)]
+            xpat = dat.value[(dat.channel==mitochan)&(dat.patient_id==pat)]
+            ypat = dat.value[(dat.channel==chan)&(dat.patient_id==pat)]
 
-            xctrl = warrendat.value[(warrendat.channel==mitochan)&(warrendat.patient_type=="control")]
-            yctrl = warrendat.value[(warrendat.channel==chan)&(warrendat.patient_type=="control")]
+            xctrl = dat.value[(dat.channel==mitochan)&(dat.patient_type=="control")]
+            yctrl = dat.value[(dat.channel==chan)&(dat.patient_type=="control")]
+            
+            xpat = np.log(xpat)
+            ypat = np.log(ypat)
+            xctrl = np.log(xctrl)
+            yctrl = np.log(yctrl)
+            xlab = "log("+mitochan+")"
+            ylab = "log("+chan+")"
             
             if ftype=="deficient":
               patcol = [1.0,0.0,0.0,0.3]
               pcstr = "red"
-              xpat = np.log(xpat)
-              ypat = np.log(ypat)
-              xctrl = np.log(xctrl)
-              yctrl = np.log(yctrl)
-              xlab = "log("+mitochan+")"
-              ylab = "log("+chan+")"
             if ftype=="overexp":
               patcol = [0.0,0.0,1.0,0.2]
               pcstr = "blue"
-              xlab = mitochan
-              ylab = chan
               
             maxx = np.max(np.concatenate((xpat.values,xctrl.values)))
             maxy = np.max(np.concatenate((ypat.values,yctrl.values)))
@@ -149,12 +150,12 @@ def main():
               print("Saving partial classification file...")
               warrendat.to_csv("dat_with_class_partial.txt",sep="\t")
               raise Found
-          wd = warrendat[(warrendat.channel==chan)&(warrendat.patient_id==pat)].copy()
-          wd.channel = chan+"_MCLASS_"+ftype.upper()
-          wd.value = mclass[ftype]
-          warrendat = pd.concat([warrendat,wd])
+          d = dat[(dat.channel==chan)&(dat.patient_id==pat)].copy()
+          d.channel = chan+"_MCLASS_"+ftype.upper()
+          d.value = mclass[ftype]
+          dat = pd.concat([dat,d])
 
-    warrendat.to_csv("dat_with_class.txt",sep="\t")
+    dat.to_csv("dat_with_class.txt",sep="\t")
 
 if __name__ == '__main__':
     try:
