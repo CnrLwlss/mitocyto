@@ -71,7 +71,7 @@ def main(fname="dat.txt",outfname="class_dat.txt",getWarren=True,mitochan="VDAC1
         warrenurl = "https://raw.githubusercontent.com/CnrLwlss/Warren_2019/master/shiny/dat.txt"
         warrenfile = "Warren_2020_data.txt"
         if not os.path.isfile(warrenfile):
-            print("No dat.txt file found, downloading data from Warren et al. (2020)...")
+            print("No "+warrenfile+" file found, downloading data from Warren et al. (2020)...")
             dat = pd.read_csv(warrenurl,sep="\t")
             dat.to_csv(warrenfile,sep="\t")
         else:
