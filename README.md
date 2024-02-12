@@ -183,5 +183,6 @@ options:
                         List of section ids (contained in Filename column of input file) corresponding to control sections
 ```
 
-Once you have successfully launched mcclass on some appropriately formatted input data, follow the on-screen instructions.  Here is a live demo of the re-analysis of some of the data from [Warren et al. (2020).](https://www.nature.com/articles/s41598-020-70885-3 ):
+Once you have successfully launched mcclass on some appropriately formatted input data, follow the on-screen instructions.  Click on this image to see a live demo of the re-analysis of some of the data from [Warren et al. (2020).](https://www.nature.com/articles/s41598-020-70885-3 ):
 
+[![Watch the video](images/mcclass_vidframe.png)](https://vimeo.com/conor/mcclass)
