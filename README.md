@@ -145,7 +145,13 @@ If an edgemap file saved by `mcgui` is already present in the directory (named E
 * Shift-left-click on a cell area: fill area with "edge" (i.e. paint white on whitemap)
  
 ## Using mcclass
-This is a commandline tool to manually classify the OXPHOS status of individual cells based on analysing average single cell protein intensities displayed as a 2D scatterplot.  Classification is by visual comparison of 2Dmito plot for control subjects with that of an individual patient section.  Deficent cells are usually identified as those occupying the bottom fork of a v-shape in the 2Dmito plot, where the healthy cells from the patient section are similar to cells from control subjects and exclusively occupy the upper fork.  
+mcclass is a commandline tool to manually classify the OXPHOS status of individual cells based on analysing average single cell protein intensities displayed as a 2D scatterplot.  Classification is by visual inspection of 2Dmito plots: scatterplots showing single cell protein level profiles, comparing levels of mitochondrial mass (mito membrane protein, x-axis) with levels of oxphos protein (y-axis) in control subjects and in an individual patient section.  Deficent cells are usually identified as those occupying the bottom fork of a v-shape in the 2Dmito plot, where the healthy cells from the patient section are similar to cells from control subjects and exclusively occupy the upper fork. 
+
+mcclass has been upgraded recently to make it a formal part of the mitocyto workflow, so please upgrade your mitocyto installation before trying it out:
+
+```shell
+pip install --upgrade mitocyto
+```
 
 To manually classify cells with mcclass first look at the documentation:
 
@@ -177,5 +183,5 @@ options:
                         List of section ids (contained in Filename column of input file) corresponding to control sections
 ```
 
-Once you have successfully launched mcclass on some appropriately formatted input data, follow the on-screen instructions.  Here is a video demonstrating re-analysis of some of the data from Warren et al. (2020).
+Once you have successfully launched mcclass on some appropriately formatted input data, follow the on-screen instructions.  Here is a live demo of the re-analysis of some of the data from [Warren et al. (2020).](https://www.nature.com/articles/s41598-020-70885-3 ):
 
