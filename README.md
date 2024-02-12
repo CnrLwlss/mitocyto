@@ -143,3 +143,45 @@ If an edgemap file saved by `mcgui` is already present in the directory (named E
 * Left-click paint on any image: draw edge on edgemap
 * Right-click paint on any image: delete edge on edgemap
 * Shift-left-click on a cell area: fill area with "edge" (i.e. paint white on whitemap)
+ 
+## Using mcclass
+mcclass is a commandline tool to manually classify the OXPHOS status of individual cells based on analysing average single cell protein intensities displayed as a 2D scatterplot.  Classification is by visual inspection of 2Dmito plots: scatterplots showing single cell protein level profiles, comparing levels of mitochondrial mass (mito membrane protein, x-axis) with levels of oxphos protein (y-axis) in control subjects and in an individual patient section.  Deficent cells are usually identified as those occupying the bottom fork of a v-shape in the 2Dmito plot, where the healthy cells from the patient section are similar to cells from control subjects and exclusively occupy the upper fork. 
+
+mcclass has been upgraded recently to make it a formal part of the mitocyto workflow, so please upgrade your mitocyto installation before trying it out:
+
+```shell
+pip install --upgrade mitocyto
+```
+
+To manually classify cells with mcclass first look at the documentation:
+
+```shell
+mcclass --help
+```
+
+Which will display:
+
+```
+mcclass --help
+usage: mcclass [-h] [--mitochan MITOCHAN] [--oxphos OXPHOS [OXPHOS ...]] [--warren | --no-warren] [--input INPUT] [--output OUTPUT] [--controls CONTROLS [CONTROLS ...]]
+
+Manual classification of cells in 2Dmito plots. Reads in single cell protein expression data from input file. Identifies control subjects and patients. Generates a series of 2D scatterplots showing relationship between an OXPHOS protein and a protein
+which is a surrogate for mitochondrial mass (e.g. VDAC1). User compares increase in OXPHOS protein with mitochondrial mass in single cells from controls with the increase in a single patient and uses that comparison to inform a manual selection of
+patient cells where increase of OXPHOS protein with mitochondrial mass would be an outlier in control data. Manual selection is by freehand drawing around the cells on scatterplot which are distinct from controls.
+
+options:
+  -h, --help            show this help message and exit
+  --mitochan MITOCHAN   Mitochondrial mass surrogate protein name. Must be present in Channel column of input file.
+  --oxphos OXPHOS [OXPHOS ...]
+                        List of OXPHOS proteins to classify, separated by space. Names specified in Channel column of input file.
+  --warren, --no-warren
+                        Classify data from Warren et al. (2020)?
+  --input INPUT         Tab-delimited input text filename. Input data should be in long form and contain data from controls and patient(s). Each subject/section should have a unique identifier specified in the Filename column. Data can have extra
+                        colums, but the following columns must be present: Value,ID,Channel,Filename ID is cell ID. Value is average pixel intensity for that protein & cell. Note capitalisation in column names.
+  --output OUTPUT       Output filename. File will be written to current directory in long format, input data repeated and classifications added.
+  --controls CONTROLS [CONTROLS ...]
+                        List of section ids (contained in Filename column of input file) corresponding to control sections
+```
+
+Once you have successfully launched mcclass on some appropriately formatted input data, follow the on-screen instructions.  Here is a live demo of the re-analysis of some of the data from [Warren et al. (2020).](https://www.nature.com/articles/s41598-020-70885-3 ):
+
